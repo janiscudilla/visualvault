@@ -9,7 +9,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
 import {
   addDoc, collection, deleteDoc, doc, getFirestore, onSnapshot,
-  orderBy, query, serverTimestamp, updateDoc,
+  orderBy, query, serverTimestamp, updateDoc, writeBatch,
 } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -61,7 +61,18 @@ async function removePhoto(photo) {
   await deleteDoc(doc(db, PHOTOS_COLLECTION, photo.id));
 }
 
-const APP_STYLES = ":root {\n  font-family: 'DM Sans', system-ui, sans-serif;\n  color: #f8f2ec;\n  background: #120e14;\n  font-synthesis: none;\n  --bg: #120e14;\n  --surface: #1c151f;\n  --surface-2: #251c29;\n  --surface-3: #2d2231;\n  --border: #3a2d3e;\n  --text: #f8f2ec;\n  --muted: #b3a5b8;\n  --faint: #766a7c;\n  --gold: #e6ad58;\n  --gold-soft: #f5cf8e;\n  --plum: #70435c;\n  --danger: #ee937d;\n  --shadow: 0 24px 70px rgba(0, 0, 0, .38);\n}\n\n* { box-sizing: border-box; }\n\nhtml { min-width: 320px; background: var(--bg); }\n\nbody {\n  margin: 0;\n  min-width: 320px;\n  min-height: 100vh;\n  background:\n    radial-gradient(circle at 15% -10%, rgba(112, 67, 92, .22), transparent 38rem),\n    radial-gradient(circle at 90% 0%, rgba(230, 173, 88, .08), transparent 28rem),\n    var(--bg);\n}\n\nbutton, input, select, textarea { font: inherit; }\nbutton { color: inherit; }\nbutton:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {\n  outline: 2px solid var(--gold);\n  outline-offset: 2px;\n}\nbutton:disabled { opacity: .55; cursor: not-allowed; }\n\n.app-shell { min-height: 100vh; }\n.modal-open { overflow: hidden; }\n\n.topbar {\n  position: sticky;\n  z-index: 20;\n  top: 0;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 1rem;\n  padding: 1.15rem clamp(1rem, 3vw, 2.5rem);\n  border-bottom: 1px solid rgba(82, 65, 87, .75);\n  background: rgba(18, 14, 20, .86);\n  backdrop-filter: blur(18px);\n}\n\n.brand { display: flex; align-items: center; gap: .8rem; min-width: 0; }\n.brand-mark {\n  display: grid;\n  width: 2.8rem;\n  height: 2.8rem;\n  flex: 0 0 auto;\n  place-items: center;\n  color: #211519;\n  border-radius: .8rem;\n  background: linear-gradient(145deg, var(--gold-soft), var(--gold));\n  box-shadow: inset 0 1px rgba(255,255,255,.5), 0 9px 24px rgba(230,173,88,.15);\n}\n\n.brand h1, .locked-screen h1, .modal h2, .empty-state h2 {\n  margin: 0;\n  font-family: 'Fraunces', Georgia, serif;\n  font-weight: 600;\n}\n.brand h1 { font-size: clamp(1.3rem, 2.2vw, 1.75rem); line-height: 1.05; }\n.brand p { margin: .25rem 0 0; color: var(--muted); font-size: .78rem; font-style: italic; }\n.header-actions { display: flex; align-items: center; gap: .6rem; }\n\n.primary-button, .secondary-button, .quiet-button, .delete-button {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: .45rem;\n  min-height: 2.6rem;\n  padding: .68rem 1rem;\n  border-radius: 999px;\n  cursor: pointer;\n  font-weight: 700;\n  font-size: .86rem;\n}\n.primary-button { color: #24160d; border: 1px solid #f0bf70; background: linear-gradient(180deg, #f2bd69, #dea04a); box-shadow: 0 8px 24px rgba(230,173,88,.13); }\n.primary-button:hover { filter: brightness(1.05); transform: translateY(-1px); }\n.secondary-button { border: 1px solid var(--border); background: var(--surface-2); }\n.secondary-button:hover, .quiet-button:hover { background: var(--surface-3); }\n.quiet-button { color: var(--muted); border: 1px solid var(--border); background: transparent; }\n.delete-button { color: var(--danger); border: 1px solid rgba(238,147,125,.3); background: transparent; }\n.icon-button {\n  display: grid;\n  width: 2.55rem;\n  height: 2.55rem;\n  padding: 0;\n  place-items: center;\n  border: 1px solid var(--border);\n  border-radius: 50%;\n  background: var(--surface-2);\n  cursor: pointer;\n}\n.icon-button:hover { background: var(--surface-3); }\n.demo-pill { padding: .4rem .7rem; border: 1px solid rgba(230,173,88,.3); border-radius: 999px; color: var(--gold-soft); background: rgba(230,173,88,.1); font-size: .75rem; }\n\nmain { width: min(1240px, calc(100% - 2rem)); margin: 0 auto; padding: 1.5rem 0 4rem; }\n\n.summary-row {\n  display: grid;\n  grid-template-columns: repeat(3, minmax(85px, 130px)) minmax(180px, 1fr);\n  gap: .7rem;\n  margin-bottom: 1rem;\n}\n.stat, .favorite-stat {\n  min-height: 5rem;\n  padding: .85rem 1rem;\n  border: 1px solid var(--border);\n  border-radius: 1rem;\n  background: linear-gradient(145deg, rgba(37,28,41,.92), rgba(28,21,31,.92));\n}\n.stat { display: flex; flex-direction: column; justify-content: center; }\n.stat strong { color: var(--gold-soft); font-family: 'Fraunces', serif; font-size: 1.55rem; font-weight: 600; line-height: 1; }\n.stat span, .favorite-stat span { margin-top: .3rem; color: var(--muted); font-size: .76rem; }\n.favorite-stat { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; text-align: right; }\n.favorite-stat strong { margin-top: .25rem; font-family: 'Fraunces', serif; font-size: 1.05rem; }\n\n.controls { padding: .8rem; border: 1px solid var(--border); border-radius: 1.15rem; background: rgba(28,21,31,.8); box-shadow: 0 12px 35px rgba(0,0,0,.12); }\n.search-box {\n  display: flex;\n  align-items: center;\n  gap: .65rem;\n  min-height: 3rem;\n  padding: 0 .9rem;\n  color: var(--muted);\n  border: 1px solid var(--border);\n  border-radius: .8rem;\n  background: var(--surface-2);\n}\n.search-box:focus-within { border-color: rgba(230,173,88,.65); box-shadow: 0 0 0 3px rgba(230,173,88,.08); }\n.search-box input { width: 100%; border: 0; outline: 0; color: var(--text); background: transparent; font-size: .95rem; }\n.search-box input::placeholder { color: #8d8091; }\n.search-box button { display: grid; padding: .25rem; border: 0; color: var(--muted); background: transparent; cursor: pointer; }\n\n.control-row { display: flex; align-items: center; gap: .6rem; margin-top: .7rem; }\n.filter-button, .sort-control, .view-switcher { border: 1px solid var(--border); border-radius: 999px; background: var(--surface-2); }\n.filter-button { display: inline-flex; align-items: center; gap: .4rem; min-height: 2.4rem; padding: .55rem .85rem; cursor: pointer; }\n.filter-button.active { border-color: rgba(230,173,88,.45); }\n.filter-button b { display: grid; width: 1.25rem; height: 1.25rem; place-items: center; border-radius: 50%; color: #24160d; background: var(--gold); font-size: .7rem; }\n.sort-control { display: flex; align-items: center; gap: .35rem; min-height: 2.4rem; padding: 0 .35rem 0 .75rem; color: var(--muted); }\n.sort-control select, .filter-select select { border: 0; outline: 0; color: var(--text); background: transparent; cursor: pointer; }\n.sort-control select { min-height: 2.2rem; padding: 0 1.3rem 0 .2rem; font-size: .82rem; }\n.sort-control option, .filter-select option, .metadata-form option { color: var(--text); background: var(--surface-2); }\n.view-switcher { display: flex; margin-left: auto; padding: .2rem; }\n.view-switcher button { display: inline-flex; align-items: center; gap: .35rem; min-height: 2rem; padding: .42rem .7rem; border: 0; border-radius: 999px; color: var(--muted); background: transparent; cursor: pointer; font-size: .78rem; }\n.view-switcher button.active { color: #24160d; background: var(--gold); }\n\n.filter-drawer { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; align-items: end; gap: .75rem; margin-top: .8rem; padding: .85rem; border-top: 1px solid var(--border); }\n.filter-select { display: grid; gap: .3rem; }\n.filter-select span { color: var(--muted); font-size: .72rem; }\n.filter-select select { width: 100%; min-height: 2.45rem; padding: 0 .75rem; border: 1px solid var(--border); border-radius: .65rem; background: var(--surface); }\n.clear-button { min-height: 2.45rem; padding: 0 .65rem; border: 0; color: var(--gold-soft); background: transparent; cursor: pointer; font-size: .8rem; }\n\n.results-line { display: flex; align-items: center; justify-content: space-between; min-height: 2.6rem; margin-top: .7rem; color: var(--muted); font-size: .8rem; }\n.results-line button { display: inline-flex; align-items: center; gap: .3rem; padding: .35rem .6rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-2); cursor: pointer; }\n\n.album-stack { display: grid; gap: 1.5rem; }\n.binder-page {\n  position: relative;\n  padding: 1.65rem 1.45rem 2rem 2.7rem;\n  border: 1px solid rgba(219,211,220,.16);\n  border-radius: .45rem 1rem 1rem .45rem;\n  background:\n    linear-gradient(115deg, rgba(255,255,255,.045), transparent 28%),\n    linear-gradient(160deg, rgba(217,223,225,.13), rgba(119,111,123,.045));\n  box-shadow: var(--shadow), inset 0 1px rgba(255,255,255,.13);\n  overflow: hidden;\n}\n.binder-page::after {\n  content: '';\n  position: absolute;\n  z-index: 3;\n  inset: 0;\n  pointer-events: none;\n  background: linear-gradient(110deg, transparent 7%, rgba(255,255,255,.075) 29%, transparent 43%);\n}\n.binder-rings { position: absolute; z-index: 5; left: -.2rem; top: 16%; bottom: 16%; display: flex; flex-direction: column; justify-content: space-around; }\n.binder-rings i { display: block; width: 2rem; height: .55rem; border: 2px solid #a99383; border-left: 0; border-radius: 0 999px 999px 0; background: linear-gradient(#e5d6c6, #8a776c); box-shadow: 2px 2px 5px rgba(0,0,0,.4); }\n.pocket-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(.65rem, 1.5vw, 1.15rem); }\n.album-pocket {\n  position: relative;\n  display: flex;\n  min-width: 0;\n  padding: clamp(.35rem, .8vw, .58rem);\n  flex-direction: column;\n  border: 1px solid rgba(230,226,234,.23);\n  border-radius: .42rem;\n  background: rgba(224,227,232,.07);\n  box-shadow: inset 0 0 0 1px rgba(255,255,255,.035), 0 8px 18px rgba(0,0,0,.2);\n  cursor: pointer;\n  text-align: left;\n  overflow: hidden;\n}\n.album-pocket::after { content: ''; position: absolute; z-index: 2; inset: 0; pointer-events: none; background: linear-gradient(125deg, rgba(255,255,255,.12), transparent 24%, transparent 70%, rgba(255,255,255,.04)); }\n.album-pocket:hover { border-color: rgba(230,173,88,.55); transform: translateY(-2px); }\n.pocket-photo { display: block; aspect-ratio: 4 / 5; border-radius: .28rem; background: #2d2231; overflow: hidden; }\n.pocket-photo img, .person-portrait img, .wall-frame img, .detail-image img { width: 100%; height: 100%; object-fit: cover; }\n.pocket-caption { display: grid; min-width: 0; padding: .55rem .15rem .15rem; }\n.pocket-caption strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: clamp(.76rem, 1.5vw, .98rem); }\n.pocket-caption small { overflow: hidden; margin-top: .1rem; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; font-size: clamp(.65rem, 1.1vw, .74rem); }\n.empty-pocket { aspect-ratio: 4 / 6; cursor: default; opacity: .45; }\n.empty-pocket:hover { border-color: rgba(230,226,234,.23); transform: none; }\n.page-number { position: absolute; right: 1.2rem; bottom: .55rem; color: rgba(244,236,245,.4); font-family: 'Fraunces', serif; font-size: .72rem; }\n.photo-placeholder { display: grid; width: 100%; height: 100%; place-items: center; color: rgba(255,245,235,.9); background: radial-gradient(circle at 35% 25%, rgba(255,255,255,.14), transparent 35%), linear-gradient(145deg, var(--placeholder), #2b202d); }\n.photo-placeholder span { font-family: 'Fraunces', serif; font-size: clamp(1.4rem, 5vw, 3.2rem); letter-spacing: .08em; }\n\n.gallery-wall {\n  display: grid;\n  grid-template-columns: repeat(12, 1fr);\n  grid-auto-flow: dense;\n  gap: clamp(1rem, 2vw, 1.8rem);\n  padding: clamp(1.2rem, 3vw, 2.5rem);\n  border: 1px solid #d2b79022;\n  border-radius: .55rem;\n  background: linear-gradient(110deg, rgba(255,239,210,.055), transparent), #1a151a;\n  box-shadow: var(--shadow), inset 0 0 70px rgba(230,173,88,.035);\n}\n.wall-frame { grid-column: span 3; display: flex; padding: .55rem; flex-direction: column; border: 4px solid #9d7548; border-radius: 2px; background: linear-gradient(145deg, #ad8658, #604329); box-shadow: 0 12px 22px rgba(0,0,0,.35), inset 0 0 0 1px #d6b07c; cursor: pointer; }\n.wall-frame.frame-2, .wall-frame.frame-5 { grid-column: span 4; }\n.wall-frame.frame-3 { grid-column: span 5; }\n.wall-frame:hover { transform: translateY(-3px) rotate(.25deg); box-shadow: 0 18px 30px rgba(0,0,0,.43); }\n.frame-mat { display: block; aspect-ratio: 4 / 5; padding: .65rem; background: #e8ddcd; overflow: hidden; }\n.frame-label { padding: .55rem .25rem .2rem; color: #fff4e4; font-family: 'Fraunces', serif; font-size: .85rem; }\n\n.people-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }\n.person-card { display: grid; grid-template-columns: 5.2rem 1fr; gap: .9rem; align-items: center; padding: .65rem; border: 1px solid var(--border); border-radius: 1rem; background: linear-gradient(145deg, var(--surface-2), var(--surface)); cursor: pointer; text-align: left; }\n.person-card:hover { border-color: rgba(230,173,88,.45); transform: translateY(-2px); }\n.person-portrait { display: block; width: 5.2rem; aspect-ratio: 4 / 5; border-radius: .65rem; overflow: hidden; }\n.person-info { display: flex; min-width: 0; flex-direction: column; }\n.person-info strong { overflow: hidden; font-family: 'Fraunces', serif; font-size: 1.08rem; text-overflow: ellipsis; white-space: nowrap; }\n.person-info small { margin-top: .18rem; color: var(--muted); }\n.person-info em { margin-top: .7rem; color: var(--gold-soft); font-size: .78rem; font-style: normal; }\n\n.empty-state, .content-loading { display: grid; min-height: 24rem; place-items: center; align-content: center; text-align: center; }\n.empty-state > span { display: grid; width: 4.3rem; height: 4.3rem; place-items: center; border: 1px solid rgba(230,173,88,.3); border-radius: 1.2rem; color: var(--gold); background: rgba(230,173,88,.08); }\n.empty-state h2 { margin-top: 1rem; font-size: 1.5rem; }\n.empty-state p { max-width: 32rem; margin: .55rem auto 1rem; color: var(--muted); }\n.content-loading { gap: .6rem; color: var(--muted); }\n.error-banner { margin: .8rem 0; padding: .8rem 1rem; border: 1px solid rgba(238,147,125,.3); border-radius: .8rem; color: #ffd6ce; background: rgba(238,147,125,.08); }\n\nfooter { display: flex; align-items: center; justify-content: center; gap: .35rem; padding: 1.5rem; color: var(--faint); font-size: .75rem; }\n\n.modal-backdrop { position: fixed; z-index: 100; inset: 0; display: grid; padding: 1rem; place-items: center; background: rgba(7,5,8,.78); backdrop-filter: blur(9px); overflow-y: auto; }\n.modal { width: min(900px, 100%); max-height: calc(100vh - 2rem); border: 1px solid var(--border); border-radius: 1.25rem; background: var(--surface); box-shadow: 0 35px 90px rgba(0,0,0,.65); overflow: auto; }\n.modal-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.25rem 1.35rem; border-bottom: 1px solid var(--border); }\n.modal h2 { font-size: 1.65rem; }\n.eyebrow { margin: 0 0 .3rem; color: var(--gold); font-size: .68rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }\n.editor-layout { display: grid; grid-template-columns: minmax(280px, .9fr) minmax(320px, 1.1fr); }\n.image-editor { padding: 1.25rem; border-right: 1px solid var(--border); background: #161118; }\n.source-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: .35rem; margin-bottom: .8rem; padding: .25rem; border: 1px solid var(--border); border-radius: .8rem; background: var(--surface); }\n.source-tabs button { display: flex; align-items: center; justify-content: center; gap: .4rem; min-height: 2.25rem; border: 0; border-radius: .6rem; color: var(--muted); background: transparent; cursor: pointer; }\n.source-tabs button.active { color: #24160d; background: var(--gold); }\n.drop-zone { display: grid; width: 100%; min-height: 23rem; padding: 2rem; place-items: center; align-content: center; gap: .45rem; border: 1px dashed #68556e; border-radius: .9rem; color: var(--muted); background: rgba(112,67,92,.08); cursor: pointer; }\n.drop-zone strong { color: var(--text); }\n.drop-zone span { font-size: .82rem; }\n.drop-zone.dragging { border-color: var(--gold); color: var(--gold); background: rgba(230,173,88,.08); }\n.url-panel { display: grid; min-height: 23rem; padding: 2rem 1rem; place-items: center; align-content: center; gap: 1rem; color: var(--muted); }\n.url-panel label { display: grid; width: 100%; gap: .35rem; font-size: .78rem; }\n.url-panel input { width: 100%; }\n.editor-preview { position: relative; aspect-ratio: 4 / 5; max-height: 25rem; border-radius: .8rem; background: #0c090d; overflow: hidden; }\n.editor-preview img { width: 100%; height: 100%; object-fit: cover; }\n.editor-preview button { position: absolute; top: .65rem; right: .65rem; display: inline-flex; align-items: center; gap: .3rem; padding: .45rem .65rem; border: 1px solid rgba(255,255,255,.18); border-radius: 999px; background: rgba(15,10,16,.76); cursor: pointer; font-size: .75rem; backdrop-filter: blur(8px); }\n.focal-controls { display: grid; gap: .55rem; margin-top: .8rem; }\n.focal-controls label { display: grid; grid-template-columns: 7rem 1fr; align-items: center; gap: .5rem; color: var(--muted); font-size: .7rem; }\n.focal-controls input { accent-color: var(--gold); }\n.metadata-form { display: flex; padding: 1.35rem; flex-direction: column; gap: 1rem; }\n.metadata-form > label { display: grid; gap: .4rem; }\n.metadata-form > label > span, .url-panel label span { color: var(--muted); font-size: .78rem; }\n.metadata-form b { color: var(--gold); }\n.metadata-form small { color: var(--faint); font-size: .7rem; }\n.metadata-form input, .metadata-form select, .metadata-form textarea, .url-panel input { padding: .72rem .8rem; border: 1px solid var(--border); border-radius: .7rem; outline: 0; color: var(--text); background: var(--surface-2); font-size: .92rem; }\n.metadata-form textarea { resize: vertical; line-height: 1.5; }\n.metadata-form input:focus, .metadata-form select:focus, .metadata-form textarea:focus, .url-panel input:focus { border-color: rgba(230,173,88,.6); }\n.form-error { margin: 0; padding: .7rem .8rem; border-radius: .6rem; color: #ffd3c9; background: rgba(238,147,125,.1); font-size: .78rem; }\n.upload-progress { position: relative; height: 1.7rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-2); overflow: hidden; }\n.upload-progress span { position: absolute; inset: 0 auto 0 0; background: rgba(230,173,88,.35); }\n.upload-progress small { position: relative; z-index: 1; display: grid; height: 100%; place-items: center; font-size: .7rem; }\n.form-actions { display: flex; align-items: center; gap: .55rem; margin-top: auto; padding-top: .4rem; }\n.action-spacer { flex: 1; }\n.spin { animation: spin .8s linear infinite; }\n@keyframes spin { to { transform: rotate(360deg); } }\n\n.detail-modal { display: grid; grid-template-columns: minmax(280px, 1.05fr) minmax(250px, .75fr); width: min(820px, 100%); overflow: hidden; }\n.detail-image { min-height: min(70vh, 670px); background: #0c090d; }\n.detail-copy { position: relative; display: flex; padding: 2rem; flex-direction: column; justify-content: center; }\n.detail-copy .icon-button { position: absolute; top: 1rem; right: 1rem; }\n.detail-copy h2 { font-size: clamp(1.8rem, 5vw, 2.8rem); line-height: 1; }\n.detail-group { margin: .55rem 0 0; color: var(--gold-soft); }\n.detail-note { margin: 1.5rem 0; color: var(--muted); line-height: 1.6; }\n.edit-detail { align-self: flex-start; margin-top: .5rem; }\n\n.locked-screen { display: flex; width: min(520px, calc(100% - 2rem)); min-height: 100vh; margin: 0 auto; padding: 3rem 1rem; flex-direction: column; align-items: center; justify-content: center; text-align: center; }\n.locked-folder { display: grid; width: 6.3rem; height: 6.3rem; margin-bottom: 1.35rem; place-items: center; border: 1px solid rgba(230,173,88,.36); border-radius: 1.7rem; color: var(--gold); background: linear-gradient(145deg, rgba(230,173,88,.14), rgba(112,67,92,.16)); box-shadow: 0 25px 70px rgba(0,0,0,.34); }\n.locked-screen h1 { font-size: clamp(2.7rem, 10vw, 4.5rem); line-height: .95; }\n.locked-screen > p:not(.eyebrow):not(.form-error) { max-width: 27rem; color: var(--muted); line-height: 1.55; }\n.sign-in-button { margin-top: 1.1rem; }\n.setup-card { display: grid; width: 100%; margin-top: 1rem; padding: 1rem; gap: .55rem; border: 1px solid var(--border); border-radius: 1rem; color: var(--muted); background: var(--surface); font-size: .85rem; }\n.setup-card strong { color: var(--text); }\n.setup-card .secondary-button { margin: .3rem auto 0; }\n.uid-copy code { word-break: break-all; }\n.app-loading { display: grid; min-height: 100vh; place-items: center; align-content: center; gap: .7rem; color: var(--muted); }\n.toast { position: fixed; z-index: 150; right: 1rem; bottom: 1rem; max-width: min(26rem, calc(100% - 2rem)); padding: .8rem 1rem; border: 1px solid rgba(230,173,88,.34); border-radius: .8rem; color: #fff2dc; background: rgba(42,31,39,.96); box-shadow: var(--shadow); font-size: .82rem; }\n\n@media (max-width: 760px) {\n  .topbar { align-items: flex-start; }\n  .brand p { display: none; }\n  .header-actions { gap: .4rem; }\n  .add-button { width: 2.55rem; padding: 0; }\n  .add-button svg { margin: 0; }\n  .add-button { font-size: 0; }\n  .demo-pill, .quiet-button { display: none; }\n  main { width: min(100% - 1rem, 1240px); padding-top: .75rem; }\n  .summary-row { grid-template-columns: repeat(3, 1fr); gap: .45rem; }\n  .stat { min-height: 4rem; padding: .65rem; }\n  .stat strong { font-size: 1.25rem; }\n  .favorite-stat { grid-column: 1 / -1; min-height: 3.4rem; align-items: flex-start; text-align: left; }\n  .favorite-stat strong { font-size: .95rem; }\n  .control-row { flex-wrap: wrap; }\n  .view-switcher { width: 100%; margin: .1rem 0 0; }\n  .view-switcher button { flex: 1; justify-content: center; }\n  .filter-drawer { grid-template-columns: 1fr; }\n  .binder-page { padding: 1rem .65rem 1.55rem 1.4rem; }\n  .binder-rings { left: -.45rem; }\n  .binder-rings i { width: 1.4rem; }\n  .pocket-grid { gap: .38rem; }\n  .album-pocket { padding: .25rem; }\n  .pocket-caption { padding: .38rem .05rem .08rem; }\n  .pocket-caption strong { font-size: .68rem; }\n  .pocket-caption small { font-size: .58rem; }\n  .empty-pocket { aspect-ratio: 4 / 6.1; }\n  .gallery-wall { grid-template-columns: repeat(6, 1fr); padding: .75rem; gap: .75rem; }\n  .wall-frame, .wall-frame.frame-2, .wall-frame.frame-3, .wall-frame.frame-5 { grid-column: span 3; padding: .35rem; border-width: 3px; }\n  .frame-mat { padding: .35rem; }\n  .frame-label { font-size: .68rem; }\n  .editor-layout, .detail-modal { grid-template-columns: 1fr; }\n  .image-editor { border-right: 0; border-bottom: 1px solid var(--border); }\n  .drop-zone, .url-panel { min-height: 15rem; }\n  .editor-preview { max-height: 19rem; }\n  .detail-image { min-height: 52vh; max-height: 58vh; }\n  .detail-copy { padding: 1.4rem; }\n  .form-actions { flex-wrap: wrap; }\n  .action-spacer { display: none; }\n  .form-actions > * { flex: 1; white-space: nowrap; }\n}\n\n@media (max-width: 420px) {\n  .brand-mark { width: 2.5rem; height: 2.5rem; }\n  .brand h1 { font-size: 1.12rem; }\n  .summary-row { gap: .35rem; }\n  .stat span { font-size: .67rem; }\n  .sort-control { flex: 1; }\n  .sort-control select { width: 100%; }\n  .pocket-caption small { display: none; }\n  .album-pocket { aspect-ratio: .7; }\n  .pocket-photo { flex: 1; aspect-ratio: auto; }\n  .people-grid { grid-template-columns: 1fr; }\n}\n\n@media (prefers-reduced-motion: no-preference) {\n  button, .album-pocket, .person-card, .wall-frame { transition: .18s ease; }\n}\n";
+async function saveAlbumOrder(photoIds) {
+  const batch = writeBatch(db);
+  photoIds.forEach((id, albumOrder) => {
+    batch.update(doc(db, PHOTOS_COLLECTION, id), {
+      albumOrder,
+      updatedAt: serverTimestamp(),
+    });
+  });
+  await batch.commit();
+}
+
+const APP_STYLES = ":root {\n  font-family: 'DM Sans', system-ui, sans-serif;\n  color: #f8f2ec;\n  background: #120e14;\n  font-synthesis: none;\n  --bg: #120e14;\n  --surface: #1c151f;\n  --surface-2: #251c29;\n  --surface-3: #2d2231;\n  --border: #3a2d3e;\n  --text: #f8f2ec;\n  --muted: #b3a5b8;\n  --faint: #766a7c;\n  --gold: #e6ad58;\n  --gold-soft: #f5cf8e;\n  --plum: #70435c;\n  --danger: #ee937d;\n  --shadow: 0 24px 70px rgba(0, 0, 0, .38);\n}\n\n* { box-sizing: border-box; }\n\nhtml { min-width: 320px; background: var(--bg); }\n\nbody {\n  margin: 0;\n  min-width: 320px;\n  min-height: 100vh;\n  background:\n    radial-gradient(circle at 15% -10%, rgba(112, 67, 92, .22), transparent 38rem),\n    radial-gradient(circle at 90% 0%, rgba(230, 173, 88, .08), transparent 28rem),\n    var(--bg);\n}\n\nbutton, input, select, textarea { font: inherit; }\nbutton { color: inherit; }\nbutton:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {\n  outline: 2px solid var(--gold);\n  outline-offset: 2px;\n}\nbutton:disabled { opacity: .55; cursor: not-allowed; }\n\n.app-shell { min-height: 100vh; }\n.modal-open { overflow: hidden; }\n\n.topbar {\n  position: sticky;\n  z-index: 20;\n  top: 0;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 1rem;\n  padding: 1.15rem clamp(1rem, 3vw, 2.5rem);\n  border-bottom: 1px solid rgba(82, 65, 87, .75);\n  background: rgba(18, 14, 20, .86);\n  backdrop-filter: blur(18px);\n}\n\n.brand { display: flex; align-items: center; gap: .8rem; min-width: 0; }\n.brand-mark {\n  display: grid;\n  width: 2.8rem;\n  height: 2.8rem;\n  flex: 0 0 auto;\n  place-items: center;\n  color: #211519;\n  border-radius: .8rem;\n  background: linear-gradient(145deg, var(--gold-soft), var(--gold));\n  box-shadow: inset 0 1px rgba(255,255,255,.5), 0 9px 24px rgba(230,173,88,.15);\n}\n\n.brand h1, .locked-screen h1, .modal h2, .empty-state h2 {\n  margin: 0;\n  font-family: 'Fraunces', Georgia, serif;\n  font-weight: 600;\n}\n.brand h1 { font-size: clamp(1.3rem, 2.2vw, 1.75rem); line-height: 1.05; }\n.brand p { margin: .25rem 0 0; color: var(--muted); font-size: .78rem; font-style: italic; }\n.header-actions { display: flex; align-items: center; gap: .6rem; }\n\n.primary-button, .secondary-button, .quiet-button, .delete-button {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: .45rem;\n  min-height: 2.6rem;\n  padding: .68rem 1rem;\n  border-radius: 999px;\n  cursor: pointer;\n  font-weight: 700;\n  font-size: .86rem;\n}\n.primary-button { color: #24160d; border: 1px solid #f0bf70; background: linear-gradient(180deg, #f2bd69, #dea04a); box-shadow: 0 8px 24px rgba(230,173,88,.13); }\n.primary-button:hover { filter: brightness(1.05); transform: translateY(-1px); }\n.secondary-button { border: 1px solid var(--border); background: var(--surface-2); }\n.secondary-button:hover, .quiet-button:hover { background: var(--surface-3); }\n.quiet-button { color: var(--muted); border: 1px solid var(--border); background: transparent; }\n.delete-button { color: var(--danger); border: 1px solid rgba(238,147,125,.3); background: transparent; }\n.icon-button {\n  display: grid;\n  width: 2.55rem;\n  height: 2.55rem;\n  padding: 0;\n  place-items: center;\n  border: 1px solid var(--border);\n  border-radius: 50%;\n  background: var(--surface-2);\n  cursor: pointer;\n}\n.icon-button:hover { background: var(--surface-3); }\n.demo-pill { padding: .4rem .7rem; border: 1px solid rgba(230,173,88,.3); border-radius: 999px; color: var(--gold-soft); background: rgba(230,173,88,.1); font-size: .75rem; }\n\nmain { width: min(1240px, calc(100% - 2rem)); margin: 0 auto; padding: 1.5rem 0 4rem; }\n\n.summary-row {\n  display: grid;\n  grid-template-columns: repeat(3, minmax(85px, 130px)) minmax(180px, 1fr);\n  gap: .7rem;\n  margin-bottom: 1rem;\n}\n.stat, .favorite-stat {\n  min-height: 5rem;\n  padding: .85rem 1rem;\n  border: 1px solid var(--border);\n  border-radius: 1rem;\n  background: linear-gradient(145deg, rgba(37,28,41,.92), rgba(28,21,31,.92));\n}\n.stat { display: flex; flex-direction: column; justify-content: center; }\n.stat strong { color: var(--gold-soft); font-family: 'Fraunces', serif; font-size: 1.55rem; font-weight: 600; line-height: 1; }\n.stat span, .favorite-stat span { margin-top: .3rem; color: var(--muted); font-size: .76rem; }\n.favorite-stat { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; text-align: right; }\n.favorite-stat strong { margin-top: .25rem; font-family: 'Fraunces', serif; font-size: 1.05rem; }\n\n.controls { padding: .8rem; border: 1px solid var(--border); border-radius: 1.15rem; background: rgba(28,21,31,.8); box-shadow: 0 12px 35px rgba(0,0,0,.12); }\n.search-box {\n  display: flex;\n  align-items: center;\n  gap: .65rem;\n  min-height: 3rem;\n  padding: 0 .9rem;\n  color: var(--muted);\n  border: 1px solid var(--border);\n  border-radius: .8rem;\n  background: var(--surface-2);\n}\n.search-box:focus-within { border-color: rgba(230,173,88,.65); box-shadow: 0 0 0 3px rgba(230,173,88,.08); }\n.search-box input { width: 100%; border: 0; outline: 0; color: var(--text); background: transparent; font-size: .95rem; }\n.search-box input::placeholder { color: #8d8091; }\n.search-box button { display: grid; padding: .25rem; border: 0; color: var(--muted); background: transparent; cursor: pointer; }\n\n.control-row { display: flex; align-items: center; gap: .6rem; margin-top: .7rem; }\n.filter-button, .sort-control, .view-switcher, .size-switcher { border: 1px solid var(--border); border-radius: 999px; background: var(--surface-2); }\n.filter-button { display: inline-flex; align-items: center; gap: .4rem; min-height: 2.4rem; padding: .55rem .85rem; cursor: pointer; }\n.filter-button.active { border-color: rgba(230,173,88,.45); }\n.filter-button b { display: grid; width: 1.25rem; height: 1.25rem; place-items: center; border-radius: 50%; color: #24160d; background: var(--gold); font-size: .7rem; }\n.sort-control { display: flex; align-items: center; gap: .35rem; min-height: 2.4rem; padding: 0 .35rem 0 .75rem; color: var(--muted); }\n.sort-control select, .filter-select select { border: 0; outline: 0; color: var(--text); background: transparent; cursor: pointer; }\n.sort-control select { min-height: 2.2rem; padding: 0 1.3rem 0 .2rem; font-size: .82rem; }\n.sort-control option, .filter-select option, .metadata-form option { color: var(--text); background: var(--surface-2); }\n.size-switcher { display: flex; margin-left: auto; padding: .2rem; }\n.view-switcher { display: flex; padding: .2rem; }\n.view-switcher button, .size-switcher button { display: inline-flex; align-items: center; justify-content: center; gap: .35rem; min-height: 2rem; padding: .42rem .7rem; border: 0; border-radius: 999px; color: var(--muted); background: transparent; cursor: pointer; font-size: .78rem; }\n.view-switcher button.active, .size-switcher button.active { color: #24160d; background: var(--gold); }\n\n.filter-drawer { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; align-items: end; gap: .75rem; margin-top: .8rem; padding: .85rem; border-top: 1px solid var(--border); }\n.filter-select { display: grid; gap: .3rem; }\n.filter-select span { color: var(--muted); font-size: .72rem; }\n.filter-select select { width: 100%; min-height: 2.45rem; padding: 0 .75rem; border: 1px solid var(--border); border-radius: .65rem; background: var(--surface); }\n.clear-button { min-height: 2.45rem; padding: 0 .65rem; border: 0; color: var(--gold-soft); background: transparent; cursor: pointer; font-size: .8rem; }\n\n.results-line { display: flex; align-items: center; justify-content: space-between; min-height: 2.6rem; margin-top: .7rem; color: var(--muted); font-size: .8rem; }\n.results-line em { margin-left: auto; color: var(--gold-soft); font-size: .73rem; font-style: normal; }\n.results-line button { display: inline-flex; align-items: center; gap: .3rem; padding: .35rem .6rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-2); cursor: pointer; }\n\n.album-stack { display: grid; gap: 1.5rem; }\n.binder-page {\n  position: relative;\n  padding: 1.65rem 1.45rem 2rem 2.7rem;\n  border: 1px solid rgba(219,211,220,.16);\n  border-radius: .45rem 1rem 1rem .45rem;\n  background:\n    linear-gradient(115deg, rgba(255,255,255,.045), transparent 28%),\n    linear-gradient(160deg, rgba(217,223,225,.13), rgba(119,111,123,.045));\n  box-shadow: var(--shadow), inset 0 1px rgba(255,255,255,.13);\n  overflow: hidden;\n}\n.binder-page::after {\n  content: '';\n  position: absolute;\n  z-index: 3;\n  inset: 0;\n  pointer-events: none;\n  background: linear-gradient(110deg, transparent 7%, rgba(255,255,255,.075) 29%, transparent 43%);\n}\n.binder-rings { position: absolute; z-index: 5; left: -.2rem; top: 16%; bottom: 16%; display: flex; flex-direction: column; justify-content: space-around; }\n.binder-rings i { display: block; width: 2rem; height: .55rem; border: 2px solid #a99383; border-left: 0; border-radius: 0 999px 999px 0; background: linear-gradient(#e5d6c6, #8a776c); box-shadow: 2px 2px 5px rgba(0,0,0,.4); }\n.pocket-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(.65rem, 1.5vw, 1.15rem); }\n.album-pocket {\n  position: relative;\n  display: flex;\n  min-width: 0;\n  padding: clamp(.35rem, .8vw, .58rem);\n  flex-direction: column;\n  border: 1px solid rgba(230,226,234,.23);\n  border-radius: .42rem;\n  background: rgba(224,227,232,.07);\n  box-shadow: inset 0 0 0 1px rgba(255,255,255,.035), 0 8px 18px rgba(0,0,0,.2);\n  cursor: pointer;\n  text-align: left;\n  overflow: hidden;\n}\n.album-pocket::after { content: ''; position: absolute; z-index: 2; inset: 0; pointer-events: none; background: linear-gradient(125deg, rgba(255,255,255,.12), transparent 24%, transparent 70%, rgba(255,255,255,.04)); }\n.album-pocket:hover { border-color: rgba(230,173,88,.55); transform: translateY(-2px); }\n.album-pocket.reorderable { cursor: grab; }\n.album-pocket.reorderable:active { cursor: grabbing; }\n.album-pocket.dragging { border-color: var(--gold); opacity: .42; transform: scale(.97); }\n.pocket-photo { display: block; aspect-ratio: 4 / 5; border-radius: .28rem; background: #2d2231; overflow: hidden; }\n.pocket-photo img, .person-portrait img, .wall-frame img, .detail-image img { width: 100%; height: 100%; object-fit: cover; }\n.pocket-caption { display: grid; min-width: 0; padding: .55rem .15rem .15rem; }\n.pocket-caption strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: clamp(.76rem, 1.5vw, .98rem); }\n.pocket-caption small { overflow: hidden; margin-top: .1rem; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; font-size: clamp(.65rem, 1.1vw, .74rem); }\n.empty-pocket { aspect-ratio: 4 / 6; cursor: default; opacity: .45; }\n.empty-pocket:hover { border-color: rgba(230,226,234,.23); transform: none; }\n.page-number { position: absolute; right: 1.2rem; bottom: .55rem; color: rgba(244,236,245,.4); font-family: 'Fraunces', serif; font-size: .72rem; }\n.photo-placeholder { display: grid; width: 100%; height: 100%; place-items: center; color: rgba(255,245,235,.9); background: radial-gradient(circle at 35% 25%, rgba(255,255,255,.14), transparent 35%), linear-gradient(145deg, var(--placeholder), #2b202d); }\n.photo-placeholder span { font-family: 'Fraunces', serif; font-size: clamp(1.4rem, 5vw, 3.2rem); letter-spacing: .08em; }\n\n.album-stack.density-comfortable .pocket-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(.5rem, 1.15vw, .85rem); }\n.album-stack.density-comfortable .binder-page { padding: 1.35rem 1.15rem 1.8rem 2.5rem; }\n.album-stack.density-compact .pocket-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: clamp(.35rem, .8vw, .62rem); }\n.album-stack.density-compact .binder-page { padding: 1.05rem .9rem 1.6rem 2.35rem; }\n.album-stack.density-compact .album-pocket { padding: .28rem; }\n.album-stack.density-compact .pocket-caption { padding: .35rem .06rem .08rem; }\n.album-stack.density-compact .pocket-caption strong { font-size: .72rem; }\n.album-stack.density-compact .pocket-caption small { font-size: .61rem; }\n\n.gallery-wall {\n  display: grid;\n  grid-template-columns: repeat(12, 1fr);\n  grid-auto-flow: dense;\n  gap: clamp(1rem, 2vw, 1.8rem);\n  padding: clamp(1.2rem, 3vw, 2.5rem);\n  border: 1px solid #d2b79022;\n  border-radius: .55rem;\n  background: linear-gradient(110deg, rgba(255,239,210,.055), transparent), #1a151a;\n  box-shadow: var(--shadow), inset 0 0 70px rgba(230,173,88,.035);\n}\n.wall-frame { grid-column: span 3; display: flex; padding: .55rem; flex-direction: column; border: 4px solid #9d7548; border-radius: 2px; background: linear-gradient(145deg, #ad8658, #604329); box-shadow: 0 12px 22px rgba(0,0,0,.35), inset 0 0 0 1px #d6b07c; cursor: pointer; }\n.wall-frame.frame-2, .wall-frame.frame-5 { grid-column: span 4; }\n.wall-frame.frame-3 { grid-column: span 5; }\n.wall-frame:hover { transform: translateY(-3px) rotate(.25deg); box-shadow: 0 18px 30px rgba(0,0,0,.43); }\n.frame-mat { display: block; aspect-ratio: 4 / 5; padding: .65rem; background: #e8ddcd; overflow: hidden; }\n.frame-label { padding: .55rem .25rem .2rem; color: #fff4e4; font-family: 'Fraunces', serif; font-size: .85rem; }\n\n.gallery-wall.density-comfortable { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; padding: 1.25rem; }\n.gallery-wall.density-compact { grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: .7rem; padding: .85rem; }\n.gallery-wall.density-comfortable .wall-frame,\n.gallery-wall.density-compact .wall-frame { grid-column: auto; }\n.gallery-wall.density-compact .wall-frame { padding: .3rem; border-width: 3px; }\n.gallery-wall.density-compact .frame-mat { padding: .3rem; }\n.gallery-wall.density-compact .frame-label { padding: .35rem .1rem .08rem; font-size: .67rem; }\n\n.people-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }\n.person-card { display: grid; grid-template-columns: 5.2rem 1fr; gap: .9rem; align-items: center; padding: .65rem; border: 1px solid var(--border); border-radius: 1rem; background: linear-gradient(145deg, var(--surface-2), var(--surface)); cursor: pointer; text-align: left; }\n.person-card:hover { border-color: rgba(230,173,88,.45); transform: translateY(-2px); }\n.person-portrait { display: block; width: 5.2rem; aspect-ratio: 4 / 5; border-radius: .65rem; overflow: hidden; }\n.person-info { display: flex; min-width: 0; flex-direction: column; }\n.person-info strong { overflow: hidden; font-family: 'Fraunces', serif; font-size: 1.08rem; text-overflow: ellipsis; white-space: nowrap; }\n.person-info small { margin-top: .18rem; color: var(--muted); }\n.person-info em { margin-top: .7rem; color: var(--gold-soft); font-size: .78rem; font-style: normal; }\n\n.people-grid.density-comfortable { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: .75rem; }\n.people-grid.density-comfortable .person-card { grid-template-columns: 4.2rem 1fr; gap: .7rem; }\n.people-grid.density-comfortable .person-portrait { width: 4.2rem; }\n.people-grid.density-compact { grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: .6rem; }\n.people-grid.density-compact .person-card { display: flex; padding: .48rem; flex-direction: column; align-items: stretch; gap: .45rem; border-radius: .75rem; }\n.people-grid.density-compact .person-portrait { width: 100%; border-radius: .48rem; }\n.people-grid.density-compact .person-info strong { font-size: .86rem; }\n.people-grid.density-compact .person-info small { overflow: hidden; font-size: .66rem; text-overflow: ellipsis; white-space: nowrap; }\n.people-grid.density-compact .person-info em { margin-top: .35rem; font-size: .68rem; }\n\n.empty-state, .content-loading { display: grid; min-height: 24rem; place-items: center; align-content: center; text-align: center; }\n.empty-state > span { display: grid; width: 4.3rem; height: 4.3rem; place-items: center; border: 1px solid rgba(230,173,88,.3); border-radius: 1.2rem; color: var(--gold); background: rgba(230,173,88,.08); }\n.empty-state h2 { margin-top: 1rem; font-size: 1.5rem; }\n.empty-state p { max-width: 32rem; margin: .55rem auto 1rem; color: var(--muted); }\n.content-loading { gap: .6rem; color: var(--muted); }\n.error-banner { margin: .8rem 0; padding: .8rem 1rem; border: 1px solid rgba(238,147,125,.3); border-radius: .8rem; color: #ffd6ce; background: rgba(238,147,125,.08); }\n\nfooter { display: flex; align-items: center; justify-content: center; gap: .35rem; padding: 1.5rem; color: var(--faint); font-size: .75rem; }\n\n.modal-backdrop { position: fixed; z-index: 100; inset: 0; display: grid; padding: 1rem; place-items: center; background: rgba(7,5,8,.78); backdrop-filter: blur(9px); overflow-y: auto; }\n.modal { width: min(900px, 100%); max-height: calc(100vh - 2rem); border: 1px solid var(--border); border-radius: 1.25rem; background: var(--surface); box-shadow: 0 35px 90px rgba(0,0,0,.65); overflow: auto; }\n.modal-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.25rem 1.35rem; border-bottom: 1px solid var(--border); }\n.modal h2 { font-size: 1.65rem; }\n.eyebrow { margin: 0 0 .3rem; color: var(--gold); font-size: .68rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }\n.editor-layout { display: grid; grid-template-columns: minmax(280px, .9fr) minmax(320px, 1.1fr); }\n.image-editor { padding: 1.25rem; border-right: 1px solid var(--border); background: #161118; }\n.source-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: .35rem; margin-bottom: .8rem; padding: .25rem; border: 1px solid var(--border); border-radius: .8rem; background: var(--surface); }\n.source-tabs button { display: flex; align-items: center; justify-content: center; gap: .4rem; min-height: 2.25rem; border: 0; border-radius: .6rem; color: var(--muted); background: transparent; cursor: pointer; }\n.source-tabs button.active { color: #24160d; background: var(--gold); }\n.drop-zone { display: grid; width: 100%; min-height: 23rem; padding: 2rem; place-items: center; align-content: center; gap: .45rem; border: 1px dashed #68556e; border-radius: .9rem; color: var(--muted); background: rgba(112,67,92,.08); cursor: pointer; }\n.drop-zone strong { color: var(--text); }\n.drop-zone span { font-size: .82rem; }\n.drop-zone.dragging { border-color: var(--gold); color: var(--gold); background: rgba(230,173,88,.08); }\n.url-panel { display: grid; min-height: 23rem; padding: 2rem 1rem; place-items: center; align-content: center; gap: 1rem; color: var(--muted); }\n.url-panel label { display: grid; width: 100%; gap: .35rem; font-size: .78rem; }\n.url-panel input { width: 100%; }\n.editor-preview { position: relative; aspect-ratio: 4 / 5; max-height: 25rem; border-radius: .8rem; background: #0c090d; overflow: hidden; }\n.editor-preview img { width: 100%; height: 100%; object-fit: cover; }\n.editor-preview button { position: absolute; top: .65rem; right: .65rem; display: inline-flex; align-items: center; gap: .3rem; padding: .45rem .65rem; border: 1px solid rgba(255,255,255,.18); border-radius: 999px; background: rgba(15,10,16,.76); cursor: pointer; font-size: .75rem; backdrop-filter: blur(8px); }\n.crop-editor { margin-top: .8rem; border: 1px solid var(--border); border-radius: .8rem; background: var(--surface); overflow: hidden; }\n.crop-toggle { display: flex; width: 100%; min-height: 2.6rem; padding: .65rem .75rem; align-items: center; justify-content: space-between; border: 0; color: var(--muted); background: transparent; cursor: pointer; text-align: left; }\n.crop-toggle span { color: var(--text); font-size: .78rem; }\n.crop-toggle small { color: var(--faint); font-size: .66rem; }\n.crop-body { display: grid; padding: .8rem; gap: .8rem; border-top: 1px solid var(--border); }\n.crop-stage { position: relative; width: min(100%, 17rem); aspect-ratio: 4 / 5; margin: 0 auto; border: 1px solid rgba(230,173,88,.55); border-radius: .55rem; background: #0c090d; cursor: grab; touch-action: none; overflow: hidden; }\n.crop-stage:active { cursor: grabbing; }\n.crop-stage img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; user-select: none; }\n.crop-guides { position: absolute; inset: 0; pointer-events: none; border: 1px solid rgba(255,255,255,.75); box-shadow: inset 0 0 0 999px rgba(0,0,0,.04); background: linear-gradient(90deg, transparent 33.1%, rgba(255,255,255,.24) 33.3%, transparent 33.5%, transparent 66.4%, rgba(255,255,255,.24) 66.6%, transparent 66.8%), linear-gradient(transparent 33.1%, rgba(255,255,255,.24) 33.3%, transparent 33.5%, transparent 66.4%, rgba(255,255,255,.24) 66.6%, transparent 66.8%); }\n.crop-guides::before, .crop-guides::after { content: ''; position: absolute; width: .8rem; height: .8rem; border-color: var(--gold); }\n.crop-guides::before { left: -.1rem; top: -.1rem; border-left: 3px solid var(--gold); border-top: 3px solid var(--gold); }\n.crop-guides::after { right: -.1rem; bottom: -.1rem; border-right: 3px solid var(--gold); border-bottom: 3px solid var(--gold); }\n.crop-controls { display: grid; gap: .55rem; }\n.crop-controls label { display: grid; grid-template-columns: 6.7rem 1fr; align-items: center; gap: .5rem; color: var(--muted); font-size: .7rem; }\n.crop-controls input { width: 100%; accent-color: var(--gold); }\n.crop-controls button { justify-self: end; padding: .25rem 0; border: 0; color: var(--gold-soft); background: transparent; cursor: pointer; font-size: .7rem; }\n.metadata-form { display: flex; padding: 1.35rem; flex-direction: column; gap: 1rem; }\n.metadata-form > label { display: grid; gap: .4rem; }\n.metadata-form > label > span, .url-panel label span { color: var(--muted); font-size: .78rem; }\n.metadata-form b { color: var(--gold); }\n.metadata-form small { color: var(--faint); font-size: .7rem; }\n.metadata-form input, .metadata-form select, .metadata-form textarea, .url-panel input { padding: .72rem .8rem; border: 1px solid var(--border); border-radius: .7rem; outline: 0; color: var(--text); background: var(--surface-2); font-size: .92rem; }\n.metadata-form textarea { resize: vertical; line-height: 1.5; }\n.metadata-form input:focus, .metadata-form select:focus, .metadata-form textarea:focus, .url-panel input:focus { border-color: rgba(230,173,88,.6); }\n.form-error { margin: 0; padding: .7rem .8rem; border-radius: .6rem; color: #ffd3c9; background: rgba(238,147,125,.1); font-size: .78rem; }\n.upload-progress { position: relative; height: 1.7rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-2); overflow: hidden; }\n.upload-progress span { position: absolute; inset: 0 auto 0 0; background: rgba(230,173,88,.35); }\n.upload-progress small { position: relative; z-index: 1; display: grid; height: 100%; place-items: center; font-size: .7rem; }\n.form-actions { display: flex; align-items: center; gap: .55rem; margin-top: auto; padding-top: .4rem; }\n.action-spacer { flex: 1; }\n.spin { animation: spin .8s linear infinite; }\n@keyframes spin { to { transform: rotate(360deg); } }\n\n.detail-modal { display: grid; grid-template-columns: minmax(280px, 1.05fr) minmax(250px, .75fr); width: min(820px, 100%); overflow: hidden; }\n.detail-image { min-height: min(70vh, 670px); background: #0c090d; }\n.detail-copy { position: relative; display: flex; padding: 2rem; flex-direction: column; justify-content: center; }\n.detail-copy .icon-button { position: absolute; top: 1rem; right: 1rem; }\n.detail-copy h2 { font-size: clamp(1.8rem, 5vw, 2.8rem); line-height: 1; }\n.detail-group { margin: .55rem 0 0; color: var(--gold-soft); }\n.detail-note { margin: 1.5rem 0; color: var(--muted); line-height: 1.6; }\n.edit-detail { align-self: flex-start; margin-top: .5rem; }\n\n.locked-screen { display: flex; width: min(520px, calc(100% - 2rem)); min-height: 100vh; margin: 0 auto; padding: 3rem 1rem; flex-direction: column; align-items: center; justify-content: center; text-align: center; }\n.locked-folder { display: grid; width: 6.3rem; height: 6.3rem; margin-bottom: 1.35rem; place-items: center; border: 1px solid rgba(230,173,88,.36); border-radius: 1.7rem; color: var(--gold); background: linear-gradient(145deg, rgba(230,173,88,.14), rgba(112,67,92,.16)); box-shadow: 0 25px 70px rgba(0,0,0,.34); }\n.locked-screen h1 { font-size: clamp(2.7rem, 10vw, 4.5rem); line-height: .95; }\n.locked-screen > p:not(.eyebrow):not(.form-error) { max-width: 27rem; color: var(--muted); line-height: 1.55; }\n.sign-in-button { margin-top: 1.1rem; }\n.setup-card { display: grid; width: 100%; margin-top: 1rem; padding: 1rem; gap: .55rem; border: 1px solid var(--border); border-radius: 1rem; color: var(--muted); background: var(--surface); font-size: .85rem; }\n.setup-card strong { color: var(--text); }\n.setup-card .secondary-button { margin: .3rem auto 0; }\n.uid-copy code { word-break: break-all; }\n.app-loading { display: grid; min-height: 100vh; place-items: center; align-content: center; gap: .7rem; color: var(--muted); }\n.toast { position: fixed; z-index: 150; right: 1rem; bottom: 1rem; max-width: min(26rem, calc(100% - 2rem)); padding: .8rem 1rem; border: 1px solid rgba(230,173,88,.34); border-radius: .8rem; color: #fff2dc; background: rgba(42,31,39,.96); box-shadow: var(--shadow); font-size: .82rem; }\n\n@media (max-width: 760px) {\n  .topbar { align-items: flex-start; }\n  .brand p { display: none; }\n  .header-actions { gap: .4rem; }\n  .add-button { width: 2.55rem; padding: 0; }\n  .add-button svg { margin: 0; }\n  .add-button { font-size: 0; }\n  .demo-pill, .quiet-button { display: none; }\n  main { width: min(100% - 1rem, 1240px); padding-top: .75rem; }\n  .summary-row { grid-template-columns: repeat(3, 1fr); gap: .45rem; }\n  .stat { min-height: 4rem; padding: .65rem; }\n  .stat strong { font-size: 1.25rem; }\n  .favorite-stat { grid-column: 1 / -1; min-height: 3.4rem; align-items: flex-start; text-align: left; }\n  .favorite-stat strong { font-size: .95rem; }\n  .control-row { flex-wrap: wrap; }\n  .size-switcher { width: 100%; margin: .1rem 0 0; }\n  .view-switcher { width: 100%; }\n  .size-switcher button,\n  .view-switcher button { flex: 1; justify-content: center; }\n  .filter-drawer { grid-template-columns: 1fr; }\n  .binder-page { padding: 1rem .65rem 1.55rem 1.4rem; }\n  .binder-rings { left: -.45rem; }\n  .binder-rings i { width: 1.4rem; }\n  .pocket-grid { gap: .38rem; }\n  .album-pocket { padding: .25rem; }\n  .pocket-caption { padding: .38rem .05rem .08rem; }\n  .pocket-caption strong { font-size: .68rem; }\n  .pocket-caption small { font-size: .58rem; }\n  .album-stack.density-comfortable .pocket-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }\n  .album-stack.density-compact .pocket-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }\n  .album-stack.density-comfortable .binder-page,\n  .album-stack.density-compact .binder-page { padding: 1rem .65rem 1.55rem 1.4rem; }\n  .empty-pocket { aspect-ratio: 4 / 6.1; }\n  .gallery-wall { grid-template-columns: repeat(6, 1fr); padding: .75rem; gap: .75rem; }\n  .wall-frame, .wall-frame.frame-2, .wall-frame.frame-3, .wall-frame.frame-5 { grid-column: span 3; padding: .35rem; border-width: 3px; }\n  .frame-mat { padding: .35rem; }\n  .frame-label { font-size: .68rem; }\n  .gallery-wall.density-compact { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; }\n  .gallery-wall.density-comfortable { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; }\n  .editor-layout, .detail-modal { grid-template-columns: 1fr; }\n  .image-editor { border-right: 0; border-bottom: 1px solid var(--border); }\n  .drop-zone, .url-panel { min-height: 15rem; }\n  .editor-preview { max-height: 19rem; }\n  .detail-image { min-height: 52vh; max-height: 58vh; }\n  .detail-copy { padding: 1.4rem; }\n  .form-actions { flex-wrap: wrap; }\n  .action-spacer { display: none; }\n  .form-actions > * { flex: 1; white-space: nowrap; }\n}\n\n@media (max-width: 420px) {\n  .brand-mark { width: 2.5rem; height: 2.5rem; }\n  .brand h1 { font-size: 1.12rem; }\n  .summary-row { gap: .35rem; }\n  .stat span { font-size: .67rem; }\n  .sort-control { flex: 1; }\n  .sort-control select { width: 100%; }\n  .pocket-caption small { display: none; }\n  .album-pocket { aspect-ratio: .7; }\n  .pocket-photo { flex: 1; aspect-ratio: auto; }\n  .people-grid { grid-template-columns: 1fr; }\n}\n\n@media (prefers-reduced-motion: no-preference) {\n  button, .album-pocket, .person-card, .wall-frame { transition: .18s ease; }\n}\n";
 const styleTag = document.createElement('style');
 styleTag.textContent = APP_STYLES;
 document.head.appendChild(styleTag);
@@ -87,6 +98,7 @@ const emptyForm = {
   imageUrl: '',
   focalX: 50,
   focalY: 50,
+  cropZoom: 1,
 };
 
 const MAX_STORED_IMAGE_LENGTH = 700_000;
@@ -123,7 +135,12 @@ function PhotoVisual({ photo, className = '', eager = false }) {
       src={photo.imageUrl}
       alt={`${photo.person}${photo.group ? ` — ${photo.group}` : ''}`}
       loading={eager ? 'eager' : 'lazy'}
-      style={{ objectPosition: `${photo.focalX ?? 50}% ${photo.focalY ?? 50}%` }}
+      draggable="false"
+      style={{
+        objectPosition: `${photo.focalX ?? 50}% ${photo.focalY ?? 50}%`,
+        transform: `scale(${photo.cropZoom ?? 1})`,
+        transformOrigin: `${photo.focalX ?? 50}% ${photo.focalY ?? 50}%`,
+      }}
     />
   );
 }
@@ -156,9 +173,19 @@ function FilterSelect({ label, value, onChange, children }) {
   );
 }
 
-function AlbumCard({ photo, onOpen }) {
+function AlbumCard({ photo, onOpen, canReorder, dragging, onDragStart, onDragOver, onDrop, onDragEnd }) {
   return (
-    <button className="album-pocket" type="button" onClick={() => onOpen(photo)}>
+    <button
+      className={`album-pocket ${canReorder ? 'reorderable' : ''} ${dragging ? 'dragging' : ''}`}
+      type="button"
+      draggable={canReorder}
+      onClick={() => onOpen(photo)}
+      onDragStart={(event) => onDragStart?.(event, photo.id)}
+      onDragOver={(event) => onDragOver?.(event, photo.id)}
+      onDrop={(event) => onDrop?.(event, photo.id)}
+      onDragEnd={onDragEnd}
+      title={canReorder ? 'Drag to move this photo' : undefined}
+    >
       <span className="pocket-photo">
         <PhotoVisual photo={photo} />
       </span>
@@ -170,14 +197,42 @@ function AlbumCard({ photo, onOpen }) {
   );
 }
 
-function AlbumView({ photos, onOpen }) {
+function AlbumView({ photos, onOpen, density, canReorder, onReorder }) {
+  const [draggedId, setDraggedId] = useState('');
+  const pageSize = density === 'compact' ? 20 : density === 'comfortable' ? 12 : PAGE_SIZE;
   const pages = [];
-  for (let index = 0; index < photos.length; index += PAGE_SIZE) {
-    pages.push(photos.slice(index, index + PAGE_SIZE));
+  for (let index = 0; index < photos.length; index += pageSize) {
+    pages.push(photos.slice(index, index + pageSize));
+  }
+
+  function startDrag(event, id) {
+    setDraggedId(id);
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', id);
+  }
+
+  function allowDrop(event) {
+    if (!canReorder) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }
+
+  function dropPhoto(event, targetId) {
+    event.preventDefault();
+    const sourceId = draggedId || event.dataTransfer.getData('text/plain');
+    if (!sourceId || sourceId === targetId) return setDraggedId('');
+    const next = [...photos];
+    const sourceIndex = next.findIndex((photo) => photo.id === sourceId);
+    const targetIndex = next.findIndex((photo) => photo.id === targetId);
+    if (sourceIndex < 0 || targetIndex < 0) return setDraggedId('');
+    const [moved] = next.splice(sourceIndex, 1);
+    next.splice(targetIndex, 0, moved);
+    setDraggedId('');
+    onReorder(next);
   }
 
   return (
-    <div className="album-stack">
+    <div className={`album-stack density-${density}`}>
       {pages.map((page, pageIndex) => (
         <section className="binder-page" key={`page-${page[0]?.id || pageIndex}`} aria-label={`Album page ${pageIndex + 1}`}>
           <div className="binder-rings" aria-hidden="true">
@@ -187,7 +242,7 @@ function AlbumView({ photos, onOpen }) {
             {Array.from({ length: PAGE_SIZE }, (_, cellIndex) => {
               const photo = page[cellIndex];
               return photo
-                ? <AlbumCard key={photo.id} photo={photo} onOpen={onOpen} />
+                ? <AlbumCard key={photo.id} photo={photo} onOpen={onOpen} canReorder={canReorder} dragging={draggedId === photo.id} onDragStart={startDrag} onDragOver={allowDrop} onDrop={dropPhoto} onDragEnd={() => setDraggedId('')} />
                 : <div className="album-pocket empty-pocket" key={`empty-${cellIndex}`} aria-hidden="true" />;
             })}
           </div>
@@ -198,9 +253,9 @@ function AlbumView({ photos, onOpen }) {
   );
 }
 
-function WallView({ photos, onOpen }) {
+function WallView({ photos, onOpen, density }) {
   return (
-    <div className="gallery-wall">
+    <div className={`gallery-wall density-${density}`}>
       {photos.map((photo, index) => (
         <button className={`wall-frame frame-${(index % 5) + 1}`} type="button" key={photo.id} onClick={() => onOpen(photo)}>
           <span className="frame-mat"><PhotoVisual photo={photo} /></span>
@@ -211,13 +266,13 @@ function WallView({ photos, onOpen }) {
   );
 }
 
-function PeopleView({ photos, counts, onChoose }) {
+function PeopleView({ photos, counts, onChoose, density }) {
   const people = [...counts.entries()]
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .map(([person, count]) => ({ person, count, photo: photos.find((item) => item.person === person) }));
 
   return (
-    <div className="people-grid">
+    <div className={`people-grid density-${density}`}>
       {people.map(({ person, count, photo }) => (
         <button className="person-card" type="button" key={person} onClick={() => onChoose(person)}>
           <span className="person-portrait"><PhotoVisual photo={photo} /></span>
@@ -308,6 +363,82 @@ async function compressImage(file) {
   throw new Error('This photo is still too large after compression. Try a smaller copy.');
 }
 
+function clampCrop(value) {
+  return Math.max(0, Math.min(100, Number(value)));
+}
+
+function CropEditor({ src, focalX, focalY, cropZoom, onChange }) {
+  const [expanded, setExpanded] = useState(true);
+  const stageRef = useRef(null);
+  const dragRef = useRef(null);
+
+  function startDrag(event) {
+    const rect = stageRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      focalX: Number(focalX),
+      focalY: Number(focalY),
+      width: rect.width,
+      height: rect.height,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function moveCrop(event) {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const zoom = Math.max(1, Number(cropZoom) || 1);
+    onChange('focalX', clampCrop(drag.focalX - ((event.clientX - drag.startX) / drag.width) * (100 / zoom)));
+    onChange('focalY', clampCrop(drag.focalY - ((event.clientY - drag.startY) / drag.height) * (100 / zoom)));
+  }
+
+  function stopDrag(event) {
+    if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
+  }
+
+  return (
+    <div className="crop-editor">
+      <button className="crop-toggle" type="button" onClick={() => setExpanded((open) => !open)}>
+        <span>{expanded ? '▾' : '▸'} Adjust crop</span>
+        <small>drag to position</small>
+      </button>
+      {expanded && (
+        <div className="crop-body">
+          <div
+            className="crop-stage"
+            ref={stageRef}
+            onPointerDown={startDrag}
+            onPointerMove={moveCrop}
+            onPointerUp={stopDrag}
+            onPointerCancel={stopDrag}
+          >
+            <img
+              src={src}
+              alt="Crop preview"
+              draggable="false"
+              style={{
+                objectPosition: `${focalX}% ${focalY}%`,
+                transform: `scale(${cropZoom})`,
+                transformOrigin: `${focalX}% ${focalY}%`,
+              }}
+            />
+            <span className="crop-guides" aria-hidden="true" />
+          </div>
+          <div className="crop-controls">
+            <label><span>Zoom</span><input type="range" min="1" max="2.5" step="0.05" value={cropZoom} onChange={(event) => onChange('cropZoom', Number(event.target.value))} /></label>
+            <label><span>Left ↔ right</span><input type="range" min="0" max="100" value={focalX} onChange={(event) => onChange('focalX', Number(event.target.value))} /></label>
+            <label><span>Top ↕ bottom</span><input type="range" min="0" max="100" value={focalY} onChange={(event) => onChange('focalY', Number(event.target.value))} /></label>
+            <button type="button" onClick={() => { onChange('focalX', 50); onChange('focalY', 50); onChange('cropZoom', 1); }}>Reset crop</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AddEditModal({ photo, user, onClose, onSaved, onDeleted }) {
   const editing = Boolean(photo?.id && !photo.demo);
   const [form, setForm] = useState(editing ? { ...emptyForm, ...photo } : emptyForm);
@@ -386,6 +517,8 @@ function AddEditModal({ photo, user, onClose, onSaved, onDeleted }) {
         note: form.note.trim(),
         focalX: Number(form.focalX),
         focalY: Number(form.focalY),
+        cropZoom: Number(form.cropZoom || 1),
+        albumOrder: editing ? (photo.albumOrder ?? Date.now()) : Date.now(),
         imageUrl: image.imageUrl,
         sourceType: image.externalUrl ? 'external-url' : 'firestore-image',
       };
@@ -467,10 +600,7 @@ function AddEditModal({ photo, user, onClose, onSaved, onDeleted }) {
           <input ref={fileInput} hidden type="file" accept="image/*" onChange={(event) => chooseFile(event.target.files[0])} />
 
           {preview && (
-            <div className="focal-controls">
-              <label><span>Left ↔ right</span><input type="range" min="0" max="100" value={form.focalX} onChange={(event) => update('focalX', event.target.value)} /></label>
-              <label><span>Top ↕ bottom</span><input type="range" min="0" max="100" value={form.focalY} onChange={(event) => update('focalY', event.target.value)} /></label>
-            </div>
+            <CropEditor src={preview} focalX={form.focalX} focalY={form.focalY} cropZoom={form.cropZoom ?? 1} onChange={update} />
           )}
         </div>
 
@@ -551,6 +681,7 @@ function App() {
   const [type, setType] = useState('');
   const [sort, setSort] = useState('newest');
   const [view, setView] = useState('album');
+  const [density, setDensity] = useState(() => window.localStorage.getItem('pretty-people-density') || 'large');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [editorPhoto, setEditorPhoto] = useState(null);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -586,6 +717,10 @@ function App() {
     return () => window.clearTimeout(timer);
   }, [toast]);
 
+  useEffect(() => {
+    window.localStorage.setItem('pretty-people-density', density);
+  }, [density]);
+
   const counts = useMemo(() => {
     const map = new Map();
     photos.forEach((photo) => map.set(photo.person, (map.get(photo.person) || 0) + 1));
@@ -607,6 +742,11 @@ function App() {
     });
 
     return next.sort((a, b) => {
+      if (sort === 'manual') {
+        const aOrder = Number.isFinite(a.albumOrder) ? a.albumOrder : Number.MAX_SAFE_INTEGER;
+        const bOrder = Number.isFinite(b.albumOrder) ? b.albumOrder : Number.MAX_SAFE_INTEGER;
+        return aOrder - bOrder || timeValue(b.createdAt) - timeValue(a.createdAt);
+      }
       if (sort === 'oldest') return timeValue(a.createdAt) - timeValue(b.createdAt);
       if (sort === 'person') return a.person.localeCompare(b.person) || (a.group || '').localeCompare(b.group || '');
       if (sort === 'group') return (a.group || 'ZZZ').localeCompare(b.group || 'ZZZ') || a.person.localeCompare(b.person);
@@ -616,6 +756,8 @@ function App() {
   }, [photos, search, person, group, type, sort, counts]);
 
   const activeFilters = [person, group, type].filter(Boolean).length;
+  const albumIsFiltered = Boolean(search.trim() || activeFilters);
+  const canReorderAlbum = isOwner && view === 'album' && sort === 'manual' && !albumIsFiltered;
 
   async function handleSignIn() {
     setAuthError('');
@@ -636,6 +778,19 @@ function App() {
 
   function clearFilters() {
     setSearch(''); setPerson(''); setGroup(''); setType('');
+  }
+
+  async function reorderAlbum(nextPhotos) {
+    const nextOrder = new Map(nextPhotos.map((photo, index) => [photo.id, index]));
+    setPhotos((current) => current.map((photo) => nextOrder.has(photo.id) ? { ...photo, albumOrder: nextOrder.get(photo.id) } : photo));
+    setToast('Saving your album order…');
+    try {
+      await withSaveTimeout(saveAlbumOrder(nextPhotos.map((photo) => photo.id)));
+      setToast('Album order saved.');
+    } catch (error) {
+      setDataError(error.message || 'Could not save the album order.');
+      setToast('Album order could not be saved.');
+    }
   }
 
   useEffect(() => {
@@ -696,7 +851,12 @@ function App() {
             <button className={`filter-button ${activeFilters ? 'active' : ''}`} type="button" onClick={() => setFiltersOpen((open) => !open)}>
               <SlidersHorizontal size={15} /> Filters {activeFilters ? <b>{activeFilters}</b> : null}
             </button>
-            <label className="sort-control"><ArrowDownAZ size={15} /><select value={sort} onChange={(event) => setSort(event.target.value)} aria-label="Sort photos"><option value="newest">Newest added</option><option value="oldest">Oldest added</option><option value="person">Person A–Z</option><option value="group">Group A–Z</option><option value="most">Most saved person</option></select></label>
+            <label className="sort-control"><ArrowDownAZ size={15} /><select value={sort} onChange={(event) => setSort(event.target.value)} aria-label="Sort photos"><option value="manual">Custom album order</option><option value="newest">Newest added</option><option value="oldest">Oldest added</option><option value="person">Person A–Z</option><option value="group">Group A–Z</option><option value="most">Most saved person</option></select></label>
+            <div className="size-switcher" aria-label="Photo size">
+              <button type="button" className={density === 'compact' ? 'active' : ''} onClick={() => setDensity('compact')}>Compact</button>
+              <button type="button" className={density === 'comfortable' ? 'active' : ''} onClick={() => setDensity('comfortable')}>Comfortable</button>
+              <button type="button" className={density === 'large' ? 'active' : ''} onClick={() => setDensity('large')}>Large</button>
+            </div>
             <div className="view-switcher" aria-label="View style">
               <button type="button" className={view === 'album' ? 'active' : ''} onClick={() => setView('album')} title="Album"><Grid3X3 size={16} /><span>Album</span></button>
               <button type="button" className={view === 'wall' ? 'active' : ''} onClick={() => setView('wall')} title="Gallery wall"><Frame size={16} /><span>Wall</span></button>
@@ -726,10 +886,14 @@ function App() {
           </section>
         ) : (
           <>
-            <div className="results-line"><span>{filtered.length} {filtered.length === 1 ? 'photo' : 'photos'}</span>{person && <button type="button" onClick={() => setPerson('')}>{person} <X size={13} /></button>}</div>
-            {view === 'album' && <AlbumView photos={filtered} onOpen={setDetailPhoto} />}
-            {view === 'wall' && <WallView photos={filtered} onOpen={setDetailPhoto} />}
-            {view === 'people' && <PeopleView photos={filtered} counts={counts} onChoose={(name) => { setPerson(name); setView('album'); }} />}
+            <div className="results-line">
+              <span>{filtered.length} {filtered.length === 1 ? 'photo' : 'photos'}</span>
+              {view === 'album' && sort === 'manual' && <em>{albumIsFiltered ? 'Clear search and filters to rearrange' : 'Drag photos to rearrange the album'}</em>}
+              {person && <button type="button" onClick={() => setPerson('')}>{person} <X size={13} /></button>}
+            </div>
+            {view === 'album' && <AlbumView photos={filtered} onOpen={setDetailPhoto} density={density} canReorder={canReorderAlbum} onReorder={reorderAlbum} />}
+            {view === 'wall' && <WallView photos={filtered} onOpen={setDetailPhoto} density={density} />}
+            {view === 'people' && <PeopleView photos={filtered} counts={counts} density={density} onChoose={(name) => { setPerson(name); setView('album'); }} />}
           </>
         )}
       </main>
