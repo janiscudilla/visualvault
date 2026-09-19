@@ -271,6 +271,16 @@ function canvasToBlob(canvas, quality) {
   });
 }
 
+function withSaveTimeout(promise) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => window.setTimeout(
+      () => reject(new Error('Firebase could not finish saving. Check that Cloud Firestore is created and its security rules are published.')),
+      15000,
+    )),
+  ]);
+}
+
 async function compressImage(file) {
   const bitmap = await createImageBitmap(file);
   const maxDimension = 1200;
@@ -380,8 +390,8 @@ function AddEditModal({ photo, user, onClose, onSaved, onDeleted }) {
         sourceType: image.externalUrl ? 'external-url' : 'firestore-image',
       };
 
-      if (editing) await changePhoto(photo.id, payload);
-      else await createPhoto(payload);
+      if (editing) await withSaveTimeout(changePhoto(photo.id, payload));
+      else await withSaveTimeout(createPhoto(payload));
       onSaved(image.warning);
     } catch (saveError) {
       setError(saveError.message || 'Could not save this photo. Please try again.');
@@ -477,7 +487,7 @@ function AddEditModal({ photo, user, onClose, onSaved, onDeleted }) {
             {editing && <button type="button" className="delete-button" onClick={handleDelete} disabled={saving}><Trash2 size={16} /> Remove</button>}
             <span className="action-spacer" />
             <button type="button" className="secondary-button" onClick={onClose} disabled={saving}>Cancel</button>
-            <button type="submit" className="primary-button" disabled={saving}>{saving ? <LoaderCircle className="spin" size={17} /> : null}{editing ? 'Save changes' : 'Add to folder'}</button>
+            <button type="submit" className="primary-button" disabled={saving}>{saving ? <LoaderCircle className="spin" size={17} /> : null}{editing ? 'Save changes' : 'Add this man'}</button>
           </div>
         </div>
       </form>
