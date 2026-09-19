@@ -20,8 +20,8 @@ const firebaseConfig = {
   appId: '1:382579714831:web:656337c8c04dfceadfac7a',
 };
 
-// After your first Google sign-in, paste your Firebase UID between these quotes.
-const ownerUid = '';
+// Firebase UID for the only account allowed to open this private collection.
+const ownerUid = 'h5uXn1HQm9btL4gZjVjAV22uiG52';
 const privateMode = true;
 const firebaseReady = true;
 
