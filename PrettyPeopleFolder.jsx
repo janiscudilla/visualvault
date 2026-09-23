@@ -556,7 +556,7 @@ function FoldersView({ photos, onChoose, density }) {
             ))}
           </span>
           <span className="folder-info">
-            <span className="folder-name"><FolderOpen size={17} /><strong>{folder.name}</strong></span>
+            <span className="folder-name"><FolderHeart size={17} /><strong>{folder.name}</strong></span>
             <small>{folder.photos.length} {folder.photos.length === 1 ? 'photo' : 'photos'}</small>
           </span>
         </button>
@@ -1847,7 +1847,7 @@ function App() {
               <button type="button" className={view === 'wall' ? 'active' : ''} onClick={() => changeView('wall')} title="Instax gallery"><Frame size={16} /><span>Gallery</span></button>
               <button type="button" className={view === 'album' ? 'active' : ''} onClick={() => changeView('album')} title="Album"><Grid3X3 size={16} /><span>Album</span></button>
               <button type="button" className={view === 'people' ? 'active' : ''} onClick={() => changeView('people')} title="People"><UsersRound size={16} /><span>People</span></button>
-              <button type="button" className={view === 'folders' ? 'active' : ''} onClick={() => changeView('folders')} title="Folders"><FolderOpen size={16} /><span>Folders</span></button>
+              <button type="button" className={view === 'folders' ? 'active' : ''} onClick={() => changeView('folders')} title="Folders"><FolderHeart size={16} /><span>Folders</span></button>
             </div>
           </div>
 
