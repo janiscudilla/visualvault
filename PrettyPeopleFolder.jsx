@@ -20,10 +20,10 @@ const firebaseConfig = {
   appId: '1:382579714831:web:656337c8c04dfceadfac7a',
 };
 
-// Firebase UID for the only account allowed to open this private collection.
+// Firebase UID for the only account allowed to modify this public gallery.
 const ownerUid = 'h5uXn1HQm9btL4gZjVjAV22uiG52';
 const ownerEmail = 'janiscudilla@gmail.com';
-const privateMode = true;
+const privateMode = false;
 const firebaseReady = true;
 
 const firebaseApp = initializeApp(firebaseConfig);
@@ -106,7 +106,7 @@ document.head.appendChild(styleTag);
 
 
 const TYPES = ['Idol', 'Actor', 'Soloist', 'Model', 'Athlete', 'Other'];
-const BUILD_LABEL = 'Verified build 41 · Sep 27, 2026';
+const BUILD_LABEL = 'Verified build 42 · Oct 6, 2026';
 
 const demoPhotos = [
   { id: 'demo-1', person: 'Song Mingi', group: 'ATEEZ', type: 'Idol', note: '', demo: true, color: '#754b5d', initials: 'MG' },
