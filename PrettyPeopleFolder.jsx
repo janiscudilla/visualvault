@@ -106,7 +106,7 @@ document.head.appendChild(styleTag);
 
 
 const TYPES = ['Idol', 'Actor', 'Soloist', 'Model', 'Athlete', 'Other'];
-const BUILD_LABEL = 'Verified build 42 · Oct 6, 2026';
+const BUILD_LABEL = 'Verified build 43 · Oct 12, 2026';
 
 const demoPhotos = [
   { id: 'demo-1', person: 'Song Mingi', group: 'ATEEZ', type: 'Idol', note: '', demo: true, color: '#754b5d', initials: 'MG' },
@@ -138,6 +138,26 @@ const emptyForm = {
   cropWidth: null,
   cropHeight: null,
 };
+
+const newUploadForm = { ...emptyForm, person: 'Mingi', group: 'ATEEZ' };
+const ATEEZ_NAMES = new Set([
+  'hongjoong', 'kim hongjoong', 'seonghwa', 'park seonghwa',
+  'yunho', 'jeong yunho', 'yeosang', 'kang yeosang',
+  'san', 'choi san', 'mingi', 'song mingi',
+  'wooyoung', 'jung wooyoung', 'jongho', 'choi jongho',
+]);
+
+function affiliationForPerson(name) {
+  return ATEEZ_NAMES.has(String(name || '').trim().toLowerCase()) ? 'ATEEZ' : null;
+}
+
+function preferredFirst(values, preferred) {
+  return [...new Set([preferred, ...values])].sort((a, b) => {
+    if (a === preferred) return b === preferred ? 0 : -1;
+    if (b === preferred) return 1;
+    return a.localeCompare(b);
+  });
+}
 
 const MAX_STORED_IMAGE_LENGTH = 700_000;
 const MAX_BATCH_PHOTOS = 10;
@@ -881,7 +901,7 @@ function AddEditModal({ photo, user, people, groups, events, tags, folders, phot
     tags: cleanList(photo.tags),
     folders: cleanList(photo.folders),
     dateTaken: String(photo.dateTaken || ''),
-  } : { ...emptyForm });
+  } : { ...newUploadForm });
   const [source, setSource] = useState(editing ? 'existing' : 'upload');
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(photo?.imageUrl || '');
@@ -908,7 +928,10 @@ function AddEditModal({ photo, user, people, groups, events, tags, folders, phot
   const fieldPrefix = inline ? 'quick' : 'edit';
 
   function update(field, value) {
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((current) => {
+      const affiliation = field === 'person' ? affiliationForPerson(value) : null;
+      return { ...current, [field]: value, ...(affiliation ? { group: affiliation } : {}) };
+    });
   }
 
   function makeBatchItem(nextFile) {
@@ -1013,7 +1036,7 @@ function AddEditModal({ photo, user, people, groups, events, tags, folders, phot
     setPreview('');
     setBatchItems([]);
     setActiveBatchId('');
-    setForm({ ...emptyForm });
+    setForm({ ...newUploadForm });
     setSource('upload');
     setError('');
     setSaveProgress(null);
@@ -1363,8 +1386,9 @@ function BulkEditModal({ photos, onClose, onSaved, onDeleted }) {
   ];
 
   function updateField(field, value) {
-    setEnabled((current) => ({ ...current, [field]: true }));
-    setForm((current) => ({ ...current, [field]: value }));
+    const affiliation = field === 'person' ? affiliationForPerson(value) : null;
+    setEnabled((current) => ({ ...current, [field]: true, ...(affiliation ? { group: true } : {}) }));
+    setForm((current) => ({ ...current, [field]: value, ...(affiliation ? { group: affiliation } : {}) }));
   }
 
   async function save(event) {
@@ -1682,8 +1706,8 @@ function App() {
     return map;
   }, [photos]);
 
-  const people = useMemo(() => [...counts.keys()].sort(), [counts]);
-  const groups = useMemo(() => [...new Set(photos.map((photo) => photo.group).filter(Boolean))].sort(), [photos]);
+  const people = useMemo(() => preferredFirst([...counts.keys()], 'Mingi'), [counts]);
+  const groups = useMemo(() => preferredFirst(photos.map((photo) => photo.group).filter(Boolean), 'ATEEZ'), [photos]);
   const events = useMemo(() => [...new Set(photos.flatMap((photo) => cleanList(photo.events?.length ? photo.events : photo.event)))].sort(), [photos]);
   const tags = useMemo(() => [...new Set(photos.flatMap((photo) => cleanList(photo.tags)))].sort(), [photos]);
   const folders = useMemo(() => [...new Set(photos.flatMap((photo) => cleanList(photo.folders)))].sort(), [photos]);
