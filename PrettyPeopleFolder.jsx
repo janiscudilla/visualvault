@@ -104,9 +104,168 @@ const styleTag = document.createElement('style');
 styleTag.textContent = APP_STYLES;
 document.head.appendChild(styleTag);
 
+const BUILD_45_STYLES = `
+/* Build 45 — modern image-library redesign */
+:root {
+  --bg: #0d0d0e;
+  --surface: #151516;
+  --surface-2: #1b1b1d;
+  --surface-3: #242427;
+  --text: #f5f2ed;
+  --muted: #a6a1a3;
+  --border: rgba(255,255,255,.11);
+  --gold: #d9aa63;
+  --gold-soft: #f0ca91;
+}
+body { background: #0d0d0e; }
+.app-shell { min-height: 100vh; background: #0d0d0e; }
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  min-height: 4.5rem;
+  padding: .8rem max(1.5rem, calc((100vw - 1480px)/2));
+  border-bottom: 1px solid rgba(255,255,255,.1);
+  background: rgba(13,13,14,.9);
+  box-shadow: none;
+  backdrop-filter: blur(18px);
+}
+.brand { gap: .75rem; }
+.brand-mark { width: 2.65rem; height: 2.65rem; border: 0; border-radius: .65rem; color: #121212; background: var(--gold); }
+.brand h1 { font-family: 'Fraunces', Georgia, serif; font-size: 1.22rem; font-weight: 600; letter-spacing: -.02em; }
+.brand p { margin-top: .12rem; color: #888386; font-size: .64rem; letter-spacing: .015em; }
+.quiet-button, .icon-button { border-color: rgba(255,255,255,.13); background: #18181a; }
+main { width: min(1480px, calc(100% - 3rem)); padding: 2rem 0 4.5rem; }
+.upload-disclosure { margin-bottom: 1.6rem; border: 1px solid rgba(255,255,255,.1); border-radius: .55rem; background: #141416; }
+.upload-disclosure > summary { color: #d8d2cc; }
+.collection-heading { align-items: flex-end; margin: 0 0 1.25rem; }
+.collection-heading .eyebrow { margin: 0 0 .55rem; color: var(--gold); font-size: .59rem; letter-spacing: .24em; }
+.collection-heading h2 { font-size: clamp(2.1rem,4.4vw,4.15rem); line-height: .98; letter-spacing: -.055em; }
+.collection-heading > p { max-width: 20rem; padding: 0 0 .25rem; color: #928d90; font-size: .78rem; text-align: right; }
+.summary-row.collection-summary { gap: .65rem; margin: 0 0 1.3rem; }
+.collection-summary .stat, .collection-summary .favorite-stat {
+  min-height: 0;
+  padding: .45rem .72rem;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 999px;
+  background: #151517;
+}
+.collection-summary .stat strong { color: var(--gold-soft); font-size: .74rem; }
+.collection-summary .stat span, .collection-summary .favorite-stat span { font-size: .66rem; }
+.collection-summary .favorite-stat { margin-left: auto; }
+.controls { padding: .75rem; border: 1px solid rgba(255,255,255,.1); border-radius: .65rem; background: #141416; }
+.search-box { min-height: 2.55rem; border: 0; border-radius: .4rem; background: #202023; }
+.search-box input { font-size: .78rem; }
+.control-row { margin-top: .65rem; }
+.filter-button, .sort-control, .arrange-button, .size-switcher, .view-switcher, .select-button {
+  min-height: 2.2rem;
+  border-color: rgba(255,255,255,.1);
+  background: #1a1a1c;
+}
+.size-switcher { margin-left: auto; }
+.view-switcher { margin-left: 0; }
+.size-switcher button.active, .view-switcher button.active { color: #17120c; background: var(--gold); }
+.results-line { margin: 1rem 0 .75rem; color: #868184; }
+.instax-gallery,
+.instax-gallery.density-comfortable,
+.instax-gallery.density-compact,
+.instax-gallery.density-large {
+  display: grid;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  gap: .55rem;
+}
+.instax-gallery { grid-template-columns: repeat(auto-fill,minmax(250px,1fr)); }
+.instax-gallery.density-large { grid-template-columns: repeat(auto-fill,minmax(320px,1fr)); }
+.instax-gallery.density-comfortable { grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); }
+.instax-gallery.density-compact { grid-template-columns: repeat(auto-fill,minmax(145px,1fr)); gap: .4rem; }
+.instax-card,
+.instax-gallery.density-compact .instax-card {
+  position: relative;
+  padding: 0;
+  border: 0;
+  border-radius: .35rem;
+  background: #19191b;
+  box-shadow: none;
+  transform: none;
+  overflow: hidden;
+  transition: transform .18s ease, filter .18s ease;
+}
+.instax-card::after { display: none; }
+.instax-card:hover { z-index: 2; box-shadow: none; transform: translateY(-2px); filter: brightness(1.06); }
+.instax-photo { width: 100%; aspect-ratio: 4/5; background: #202023; }
+.instax-caption,
+.instax-gallery.density-comfortable .instax-caption,
+.instax-gallery.density-compact .instax-caption {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: auto;
+  min-height: 3.2rem;
+  padding: 1.8rem .7rem .65rem;
+  justify-content: flex-end;
+  background: linear-gradient(transparent,rgba(0,0,0,.82));
+  pointer-events: none;
+}
+.instax-caption:empty { display: none; }
+.instax-note,
+.instax-gallery.density-large .instax-note.note-short,
+.instax-gallery.density-large .instax-note.note-medium,
+.instax-gallery.density-large .instax-note.note-long,
+.instax-gallery.density-comfortable .instax-note.note-short,
+.instax-gallery.density-comfortable .instax-note.note-medium,
+.instax-gallery.density-comfortable .instax-note.note-long,
+.instax-gallery.density-compact .instax-note.note-short,
+.instax-gallery.density-compact .instax-note.note-medium,
+.instax-gallery.density-compact .instax-note.note-long {
+  padding: 0;
+  color: #fff;
+  font-size: clamp(.72rem,1.1vw,.98rem);
+  line-height: 1.12;
+  text-align: left;
+  text-shadow: 0 1px 5px #000;
+}
+.instax-card.selected { outline: 3px solid var(--gold); outline-offset: -3px; }
+.selection-check { top: .6rem; right: .6rem; }
+.drag-grip { top: .55rem; left: .55rem; background: rgba(10,10,11,.82); }
+.people-grid { grid-template-columns: repeat(auto-fill,minmax(235px,1fr)); gap: .65rem; }
+.person-card { padding: 0; border-radius: .45rem; border-color: rgba(255,255,255,.1); background: #171719; overflow: hidden; }
+.person-open { grid-template-columns: 7rem 1fr; gap: .8rem; }
+.person-portrait { width: 7rem; height: 8.5rem; border-radius: 0; }
+.person-info strong { font-family: 'Fraunces',Georgia,serif; font-size: 1.1rem; }
+.cover-button { margin: 0; border-width: 1px 0 0; border-radius: 0; }
+.folders-grid { gap: .75rem; }
+.folder-card { border-radius: .5rem; background: #171719; }
+.site-footer { width: min(1480px,calc(100% - 3rem)); border-color: rgba(255,255,255,.1); }
+@media(max-width:760px) {
+  .topbar { padding: .72rem 1rem; }
+  .brand p { display: none; }
+  main { width: calc(100% - 1.25rem); padding-top: 1.3rem; }
+  .collection-heading { align-items: flex-start; }
+  .collection-heading > p { text-align: left; }
+  .summary-row.collection-summary { gap: .4rem; }
+  .collection-summary .favorite-stat { display: none; }
+  .size-switcher { margin-left: 0; }
+  .instax-gallery,
+  .instax-gallery.density-comfortable { grid-template-columns: repeat(2,minmax(0,1fr)); gap: .4rem; }
+  .instax-gallery.density-large { grid-template-columns: 1fr; max-width: 32rem; margin: auto; }
+  .instax-gallery.density-compact { grid-template-columns: repeat(3,minmax(0,1fr)); gap: .28rem; }
+  .instax-caption { padding: 1.4rem .5rem .45rem; }
+  .site-footer { width: calc(100% - 1.25rem); }
+}
+`;
+const build45StyleTag = document.createElement('style');
+build45StyleTag.textContent = BUILD_45_STYLES;
+document.head.appendChild(build45StyleTag);
+
 
 const TYPES = ['Idol', 'Actor', 'Soloist', 'Model', 'Athlete', 'Other'];
-const BUILD_LABEL = 'Build 44 · October 12, 2026';
+const BUILD_LABEL = 'Build 45 · October 12, 2026';
 
 const demoPhotos = [
   { id: 'demo-1', person: 'Song Mingi', group: 'ATEEZ', type: 'Idol', note: '', demo: true, color: '#754b5d', initials: 'MG' },
@@ -1972,7 +2131,7 @@ function App() {
           <span className="brand-mark"><FolderHeart size={25} /></span>
           <div>
             <h1>Pretty People Folder</h1>
-            <p>An archive of beautiful distractions.</p>
+            <p>Your private collection of favorite faces.</p>
           </div>
         </div>
         <div className="header-actions">
@@ -1995,8 +2154,8 @@ function App() {
         {isOwner && <details className="upload-disclosure" id="upload-disclosure"><summary><ImagePlus size={18} /><span>Add to your collection</span><Plus size={17} /></summary><AddEditModal key={uploaderKey} inline user={user} people={people} groups={groups} events={events} tags={tags} folders={folders} photoCredits={photoCredits} onClose={() => {}} onSaved={(warning, count = 1) => { setUploaderKey((value) => value + 1); setToast(warning ? 'Photo saved. The original site blocked copying, so this one still uses its URL.' : count > 1 ? `${count} photos added to your folder.` : 'Photo added to your folder.'); }} onDeleted={() => {}} /></details>}
 
         <div className="collection-heading">
-          <div><p className="eyebrow">THE PERSONAL PHOTO ARCHIVE</p><h2>Worth another look.</h2></div>
-          <p>Favorite faces. Unforgettable moments.</p>
+          <div><p className="eyebrow">THE PERSONAL PHOTO ARCHIVE</p><h2>Faces worth saving.</h2></div>
+          <p>A clean, visual library of the people and moments you love.</p>
         </div>
 
         <section className="summary-row collection-summary" aria-label="Folder summary">
