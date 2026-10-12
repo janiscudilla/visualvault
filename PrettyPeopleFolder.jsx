@@ -263,9 +263,139 @@ const build45StyleTag = document.createElement('style');
 build45StyleTag.textContent = BUILD_45_STYLES;
 document.head.appendChild(build45StyleTag);
 
+const BUILD_46_STYLES = `
+/* Build 46 — bright compact media library */
+:root {
+  --bg: #f5f5f8;
+  --surface: #ffffff;
+  --surface-2: #f1f1f5;
+  --surface-3: #e7e7ee;
+  --text: #202027;
+  --muted: #777781;
+  --border: #dedee6;
+  --gold: #6f61d8;
+  --gold-soft: #6f61d8;
+  --danger: #c94b64;
+  --shadow: 0 18px 48px rgba(34,31,54,.1);
+}
+* { scrollbar-color: #c4c0da #f3f2f7; }
+.app-shell,
+.app-shell * { font-family: Inter, 'Avenir Next', 'Segoe UI', Arial, sans-serif !important; }
+body,
+button,
+input,
+select,
+textarea { font-family: Inter, 'Avenir Next', 'Segoe UI', Arial, sans-serif; }
+body { color: var(--text); background: #f5f5f8; }
+.app-shell { background: #f5f5f8; }
+.topbar {
+  min-height: 4rem;
+  padding-top: .65rem;
+  padding-bottom: .65rem;
+  border-bottom-color: #e4e3eb;
+  color: #202027;
+  background: rgba(255,255,255,.94);
+  box-shadow: 0 1px 12px rgba(45,40,75,.04);
+}
+.brand-mark { color: #fff; background: linear-gradient(135deg,#7a6ee2,#aa8eea); box-shadow: 0 6px 16px rgba(111,97,216,.22); }
+.brand h1,
+.collection-heading h2,
+.modal-heading h2,
+.empty-state h2,
+.drop-zone strong,
+.person-info strong,
+.detail-info h2 { font-family: Inter, 'Avenir Next', 'Segoe UI', Arial, sans-serif; }
+.brand h1 { color: #272630; font-size: 1.05rem; font-weight: 750; letter-spacing: -.025em; }
+.brand p { color: #8b8993; font-style: normal; }
+.quiet-button,
+.icon-button { color: #5f5c68; border-color: #dedee6; background: #fff; }
+.quiet-button:hover,
+.icon-button:hover { background: #f1f0f6; }
+main { padding-top: 1.5rem; }
+.collection-heading { margin-bottom: 1rem; }
+.collection-heading .eyebrow { color: #7668d8; font-size: .58rem; font-weight: 750; }
+.collection-heading h2 { color: #24232b; font-size: clamp(1.7rem,3.5vw,2.75rem); font-weight: 760; line-height: 1.05; letter-spacing: -.045em; }
+.collection-heading > p { color: #85838d; }
+.summary-row.collection-summary { margin-bottom: 1rem; }
+.collection-summary .stat,
+.collection-summary .favorite-stat { color: #66636f; border-color: #e0dfe8; background: #fff; box-shadow: 0 2px 8px rgba(45,40,75,.035); }
+.collection-summary .stat strong,
+.collection-summary .favorite-stat strong { color: #6558ca; }
+.upload-disclosure { border-color: #dedee6; background: #fff; box-shadow: 0 6px 18px rgba(45,40,75,.045); }
+.upload-disclosure > summary { color: #5e51c0; }
+.upload-disclosure .inline-uploader,
+.inline-uploader .image-editor,
+.editor-layout,
+.image-editor { background: #fff; }
+.modal-heading.inline-upload-heading { background: linear-gradient(110deg,#f1efff,#fff7fb); }
+.controls { padding: .65rem; border-color: #dfdee7; background: #fff; box-shadow: 0 5px 18px rgba(45,40,75,.05); }
+.search-box { color: #85818e; border: 1px solid #e2e1e9; background: #f5f5f8; }
+.search-box input { color: #272630; }
+.search-box input::placeholder { color: #a19ea8; }
+.filter-button,
+.sort-control,
+.arrange-button,
+.view-switcher,
+.select-button { color: #585661; border-color: #dfdee7; background: #fff; }
+.filter-button:hover,
+.arrange-button:hover,
+.select-button:hover { background: #f3f1fb; }
+.sort-control select { color: #4f4d58; }
+.view-switcher button { color: #6c6974; }
+.view-switcher button.active { color: #fff; background: #6f61d8; }
+.primary-button { color: #fff; background: #6f61d8; box-shadow: 0 6px 16px rgba(111,97,216,.2); }
+.secondary-button { color: #554ba8; border-color: #d8d4f2; background: #f4f2ff; }
+.filter-drawer { border-color: #e1e0e7; background: #fafafd; }
+.filter-field select,
+.form-field input,
+.form-field textarea,
+.form-field select,
+.chip-input-row input,
+.url-panel input { color: #272630; border-color: #dcdbe4; background: #fff; }
+.results-line { color: #777480; }
+.instax-gallery.density-compact { grid-template-columns: repeat(auto-fill,minmax(145px,1fr)); gap: .55rem; }
+.instax-card,
+.instax-gallery.density-compact .instax-card { border-radius: .42rem; background: #e9e9ee; box-shadow: 0 2px 8px rgba(32,28,51,.08); }
+.instax-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(32,28,51,.14); }
+.instax-note,
+.instax-gallery.density-compact .instax-note.note-short,
+.instax-gallery.density-compact .instax-note.note-medium,
+.instax-gallery.density-compact .instax-note.note-long { font-family: Inter, 'Avenir Next', 'Segoe UI', Arial, sans-serif; font-size: .68rem; font-weight: 600; line-height: 1.25; }
+.people-grid { gap: .65rem; }
+.person-card { color: #292831; border-color: #dfdee7; background: #fff; box-shadow: 0 3px 12px rgba(45,40,75,.055); }
+.person-card:hover { border-color: #b9b3e7; }
+.person-info strong { color: #292831; font-size: .94rem; font-weight: 750; }
+.person-info small,
+.person-info em { color: #85818e; }
+.cover-button { color: #6558ca; border-color: #e0dff0; }
+.folder-card { color: #292831; border-color: #dfdee7; background: #fff; box-shadow: 0 4px 14px rgba(45,40,75,.06); }
+.folder-card:hover { border-color: #b9b3e7; }
+.folder-info { background: #fff; }
+.folder-name svg { color: #7668d8; }
+.modal-backdrop { background: rgba(32,29,48,.46); }
+.modal { color: #292831; border-color: #d9d7e2; background: #fff; box-shadow: 0 25px 80px rgba(34,30,54,.24); }
+.modal-heading { border-color: #e2e0e8; background: #fff; }
+.modal-heading h2 { color: #292831; font-weight: 760; }
+.detail-info,
+.bulk-edit-body,
+.form-fields { background: #fff; }
+.detail-info h2 { color: #292831; font-weight: 760; }
+.detail-note { color: #35333d; font-family: Inter, 'Avenir Next', 'Segoe UI', Arial, sans-serif; }
+.site-footer { color: #85818e; border-color: #dfdee7; }
+.site-footer .release-label { color: #6558ca; font-weight: 700; }
+.toast { color: #fff; border-color: #6f61d8; background: #38334f; }
+@media(max-width:760px) {
+  .collection-heading h2 { font-size: 1.8rem; }
+  .instax-gallery.density-compact { grid-template-columns: repeat(3,minmax(0,1fr)); gap: .35rem; }
+}
+`;
+const build46StyleTag = document.createElement('style');
+build46StyleTag.textContent = BUILD_46_STYLES;
+document.head.appendChild(build46StyleTag);
+
 
 const TYPES = ['Idol', 'Actor', 'Soloist', 'Model', 'Athlete', 'Other'];
-const BUILD_LABEL = 'Build 45 · October 12, 2026';
+const BUILD_LABEL = 'Build 46 · October 12, 2026';
 
 const demoPhotos = [
   { id: 'demo-1', person: 'Song Mingi', group: 'ATEEZ', type: 'Idol', note: '', demo: true, color: '#754b5d', initials: 'MG' },
@@ -1914,7 +2044,7 @@ function App() {
   const galleryIsFiltered = Boolean(search.trim() || activeFilters);
   const canReorderPhotos = isOwner && rearranging && !selecting && view === 'wall';
   const canReorderFolders = isOwner && rearranging && view === 'folders' && folderSort === 'manual';
-  const density = viewDensities[view] || DEFAULT_VIEW_DENSITIES[view] || 'comfortable';
+  const density = 'compact';
   const selectedPhotos = photos.filter((photo) => selectedIds.has(photo.id));
 
   async function handleSignIn() {
@@ -2184,11 +2314,6 @@ function App() {
               : <label className="sort-control"><ArrowDownAZ size={15} /><select value={folderSort} onChange={(event) => { const nextSort = event.target.value; setFolderSort(nextSort); setRearranging(nextSort === 'manual'); }} aria-label="Sort folders"><option value="alphabetical">Alphabetical</option><option value="newest">Newest created</option><option value="oldest">Oldest created</option><option value="manual">Custom arrangement</option></select></label>}
             {isOwner && (view === 'wall' || view === 'folders') && <button className={`arrange-button ${rearranging ? 'active' : ''}`} type="button" onClick={toggleRearranging}><LayoutGrid size={15} /> {rearranging ? 'Done arranging' : view === 'folders' ? 'Arrange folders' : 'Arrange photos'}</button>}
             {isOwner && view === 'wall' && (selecting ? <div className="selection-actions" role="group" aria-label="Edit selected photos"><span aria-live="polite">{selectedIds.size} selected</span><button type="button" onClick={() => setSelectedIds(new Set(selectedIds.size === filtered.length ? [] : filtered.map((photo) => photo.id)))}>{selectedIds.size === filtered.length ? 'Deselect all' : 'Select all'}</button><button className="primary-button" type="button" disabled={!selectedIds.size} onClick={() => setBulkEditOpen(true)}>Edit {selectedIds.size || ''} {selectedIds.size === 1 ? 'photo' : 'photos'}</button><button type="button" onClick={toggleSelecting}>Done</button></div> : <button className="select-button" type="button" onClick={toggleSelecting}>Select &amp; edit photos</button>)}
-            <div className="size-switcher" aria-label="Photo size">
-              <button type="button" className={density === 'compact' ? 'active' : ''} onClick={() => changeDensity('compact')}>Compact</button>
-              <button type="button" className={density === 'comfortable' ? 'active' : ''} onClick={() => changeDensity('comfortable')}>Comfortable</button>
-              <button type="button" className={density === 'large' ? 'active' : ''} onClick={() => changeDensity('large')}>Large</button>
-            </div>
             <div className="view-switcher" aria-label="View style">
               <button type="button" className={view === 'wall' ? 'active' : ''} onClick={() => changeView('wall')} title="Instax gallery"><Frame size={16} /><span>Gallery</span></button>
               <button type="button" className={view === 'people' ? 'active' : ''} onClick={() => changeView('people')} title="People"><UsersRound size={16} /><span>People</span></button>
