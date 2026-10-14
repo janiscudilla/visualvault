@@ -393,9 +393,112 @@ const build46StyleTag = document.createElement('style');
 build46StyleTag.textContent = BUILD_46_STYLES;
 document.head.appendChild(build46StyleTag);
 
+const uiFontLink = document.createElement('link');
+uiFontLink.rel = 'stylesheet';
+uiFontLink.href = 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap';
+document.head.appendChild(uiFontLink);
+
+const BUILD_47_STYLES = `
+/* Build 47 — softer type, handwritten captions, Polaroid folders */
+.app-shell,
+.app-shell * { font-family: 'DM Sans', 'Segoe UI', Arial, sans-serif !important; }
+.brand h1,
+.collection-heading h2,
+.modal-heading h2,
+.empty-state h2,
+.drop-zone strong,
+.person-info strong,
+.detail-info h2 { font-family: 'Outfit', 'DM Sans', 'Segoe UI', sans-serif !important; }
+.brand h1 { font-weight: 600; letter-spacing: -.015em; }
+.collection-heading h2 { font-weight: 600; letter-spacing: -.035em; }
+.instax-note,
+.instax-gallery.density-compact .instax-note.note-short,
+.instax-gallery.density-compact .instax-note.note-medium,
+.instax-gallery.density-compact .instax-note.note-long { font-family: 'Banana Super', cursive !important; font-size: .88rem; font-weight: 400; line-height: 1.1; }
+.detail-note { font-family: 'Banana Super', cursive !important; font-weight: 400; }
+.quiet-button,
+.icon-button,
+.filter-button,
+.sort-control,
+.arrange-button,
+.select-button,
+.primary-button,
+.secondary-button,
+.view-switcher,
+.view-switcher button,
+.selection-actions,
+.selection-actions button,
+.clear-button,
+.manage-lists-button,
+.cover-button,
+.chip,
+.chip-input-row button,
+.persistent-add-more,
+.open-crop-button,
+.crop-modal-actions button,
+.upload-disclosure,
+.upload-disclosure > summary,
+.search-box,
+.controls,
+.collection-summary .stat,
+.collection-summary .favorite-stat { border-radius: .38rem; }
+.icon-button { border-radius: .38rem; }
+.view-switcher { overflow: hidden; }
+.view-switcher button { border-radius: .22rem; }
+.collection-summary .stat,
+.collection-summary .favorite-stat { padding: .45rem .75rem; }
+.folders-grid.density-compact,
+.folders-grid { grid-template-columns: repeat(auto-fill,minmax(155px,1fr)); gap: 1rem; align-items: start; }
+.folder-card,
+.folders-grid.density-compact .folder-card {
+  display: flex;
+  margin-top: 0;
+  padding: .48rem .48rem .7rem;
+  flex-direction: column;
+  border: 1px solid #ddd9d2;
+  border-radius: .12rem;
+  background: linear-gradient(145deg,#fffefa,#f0ece5);
+  box-shadow: 0 7px 16px rgba(48,42,37,.13);
+  transform: rotate(var(--folder-tilt,0deg));
+  overflow: hidden;
+}
+.folder-card::before { display: none; }
+.folder-card:nth-child(4n+1) { --folder-tilt: -.35deg; }
+.folder-card:nth-child(4n+2) { --folder-tilt: .25deg; }
+.folder-card:nth-child(4n+3) { --folder-tilt: -.15deg; }
+.folder-card:nth-child(4n+4) { --folder-tilt: .4deg; }
+.folder-card:hover { border-color: #c8c1b8; box-shadow: 0 13px 23px rgba(48,42,37,.18); transform: translateY(-3px) rotate(0deg); }
+.folder-preview,
+.folders-grid.density-compact .folder-preview,
+.folder-preview.preview-count-1,
+.folder-preview.preview-count-2,
+.folder-preview.preview-count-3,
+.folder-preview.preview-count-4 { display: block; width: 100%; aspect-ratio: 4/5; padding: 0; border: 0; border-radius: 0; background: #ddd; overflow: hidden; }
+.folder-preview > span { display: none; }
+.folder-preview > span:first-child { display: block; width: 100%; height: 100%; border: 0; transform: none; }
+.folder-preview img,
+.folder-preview .photo-placeholder { width: 100%; height: 100%; object-fit: cover; }
+.folder-info,
+.folders-grid.density-compact .folder-info { display: flex; min-height: 3.45rem; margin: 0; padding: .48rem .18rem 0; flex-direction: column; align-items: center; justify-content: center; gap: .04rem; border: 0; border-radius: 0; color: #3b3537; background: transparent; box-shadow: none; text-align: center; }
+.folder-name { display: block; width: 100%; }
+.folder-name svg { display: none; }
+.folder-name strong,
+.folders-grid.density-compact .folder-name strong { display: block; overflow: hidden; color: #3b3537; font-family: 'Banana Super', cursive !important; font-size: 1rem; font-weight: 400; line-height: 1.08; text-overflow: ellipsis; white-space: nowrap; }
+.folder-info small,
+.folders-grid.density-compact .folder-info small { color: #8c8382; font-size: .58rem; }
+@media(max-width:760px) {
+  .folders-grid.density-compact,
+  .folders-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: .7rem; }
+  .folder-name strong { font-size: .9rem; }
+}
+`;
+const build47StyleTag = document.createElement('style');
+build47StyleTag.textContent = BUILD_47_STYLES;
+document.head.appendChild(build47StyleTag);
+
 
 const TYPES = ['Idol', 'Actor', 'Soloist', 'Model', 'Athlete', 'Other'];
-const BUILD_LABEL = 'Build 46 · October 12, 2026';
+const BUILD_LABEL = 'Build 47 · October 13, 2026';
 
 const demoPhotos = [
   { id: 'demo-1', person: 'Song Mingi', group: 'ATEEZ', type: 'Idol', note: '', demo: true, color: '#754b5d', initials: 'MG' },
