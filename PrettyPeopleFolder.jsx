@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   ArrowDownAZ, ChevronLeft, ChevronRight, FolderHeart, Frame, ImagePlus, Images, LayoutGrid,
-  LoaderCircle, LogIn, LogOut, MoreHorizontal, Pencil, Plus, Search,
+  LoaderCircle, Lock, LogIn, LogOut, MoreHorizontal, Pencil, Plus, Search,
   SlidersHorizontal, Trash2, Upload, UsersRound, X,
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
@@ -33,39 +33,47 @@ const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
 
 const PHOTOS_COLLECTION = 'prettyPeoplePhotos';
+const PRIVATE_PHOTOS_COLLECTION = 'privatePrettyPeoplePhotos';
 
-function watchPhotos(onData, onError) {
-  const photosQuery = query(collection(db, PHOTOS_COLLECTION), orderBy('createdAt', 'desc'));
+function watchPhotos(collectionName, onData, onError) {
+  const photosQuery = query(collection(db, collectionName), orderBy('createdAt', 'desc'));
   return onSnapshot(
     photosQuery,
-    (snapshot) => onData(snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))),
+    (snapshot) => onData(snapshot.docs.map((item) => ({ id: item.id, ...item.data(), _collection: collectionName, _isPrivate: collectionName === PRIVATE_PHOTOS_COLLECTION }))),
     onError,
   );
 }
 
-async function createPhoto(data) {
-  return addDoc(collection(db, PHOTOS_COLLECTION), {
+async function createPhoto(data, isPrivate = false) {
+  const collectionName = isPrivate ? PRIVATE_PHOTOS_COLLECTION : PHOTOS_COLLECTION;
+  return addDoc(collection(db, collectionName), {
     ...data,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
 }
 
-async function changePhoto(id, data) {
-  return updateDoc(doc(db, PHOTOS_COLLECTION, id), {
-    ...data,
-    updatedAt: serverTimestamp(),
-  });
+async function changePhoto(photo, data, isPrivate = false) {
+  const sourceCollection = photo._collection || (photo._isPrivate ? PRIVATE_PHOTOS_COLLECTION : PHOTOS_COLLECTION);
+  const destinationCollection = isPrivate ? PRIVATE_PHOTOS_COLLECTION : PHOTOS_COLLECTION;
+  const nextData = { ...data, updatedAt: serverTimestamp() };
+  if (sourceCollection === destinationCollection) return updateDoc(doc(db, sourceCollection, photo.id), nextData);
+  const batch = writeBatch(db);
+  batch.set(doc(db, destinationCollection, photo.id), { ...nextData, createdAt: photo.createdAt || serverTimestamp() });
+  batch.delete(doc(db, sourceCollection, photo.id));
+  return batch.commit();
 }
 
 async function removePhoto(photo) {
-  await deleteDoc(doc(db, PHOTOS_COLLECTION, photo.id));
+  const collectionName = photo._collection || (photo._isPrivate ? PRIVATE_PHOTOS_COLLECTION : PHOTOS_COLLECTION);
+  await deleteDoc(doc(db, collectionName, photo.id));
 }
 
-async function saveAlbumOrder(photoIds) {
+async function saveAlbumOrder(photos) {
   const batch = writeBatch(db);
-  photoIds.forEach((id, albumOrder) => {
-    batch.update(doc(db, PHOTOS_COLLECTION, id), {
+  photos.forEach((photo, albumOrder) => {
+    const collectionName = photo._collection || (photo._isPrivate ? PRIVATE_PHOTOS_COLLECTION : PHOTOS_COLLECTION);
+    batch.update(doc(db, collectionName, photo.id), {
       albumOrder,
     });
   });
@@ -75,8 +83,9 @@ async function saveAlbumOrder(photoIds) {
 async function updatePhotoMetadata(changes) {
   for (let start = 0; start < changes.length; start += 400) {
     const batch = writeBatch(db);
-    changes.slice(start, start + 400).forEach(({ id, data }) => {
-      batch.update(doc(db, PHOTOS_COLLECTION, id), {
+    changes.slice(start, start + 400).forEach(({ id, data, collectionName, isPrivate }) => {
+      const targetCollection = collectionName || (isPrivate ? PRIVATE_PHOTOS_COLLECTION : PHOTOS_COLLECTION);
+      batch.update(doc(db, targetCollection, id), {
         ...data,
         updatedAt: serverTimestamp(),
       });
@@ -90,9 +99,12 @@ async function importPhotoBackup(items) {
     const batch = writeBatch(db);
     items.slice(start, start + 8).forEach((item) => {
       const safeId = typeof item.id === 'string' && item.id && !item.id.includes('/') ? item.id : null;
-      const reference = safeId ? doc(db, PHOTOS_COLLECTION, safeId) : doc(collection(db, PHOTOS_COLLECTION));
+      const targetCollection = item._isPrivate || item.accessLevel === 'locked' ? PRIVATE_PHOTOS_COLLECTION : PHOTOS_COLLECTION;
+      const reference = safeId ? doc(db, targetCollection, safeId) : doc(collection(db, targetCollection));
       const data = { ...item };
       delete data.id;
+      delete data._collection;
+      delete data._isPrivate;
       batch.set(reference, data);
     });
     await batch.commit();
@@ -496,9 +508,32 @@ const build47StyleTag = document.createElement('style');
 build47StyleTag.textContent = BUILD_47_STYLES;
 document.head.appendChild(build47StyleTag);
 
+const BUILD_48_STYLES = `
+/* Build 48 — owner-only locked folders */
+.visibility-choice { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); margin: 0; padding: 0; gap: .55rem; border: 0; }
+.visibility-choice legend { margin-bottom: .45rem; color: var(--muted); font-size: .75rem; }
+.visibility-choice label { position: relative; min-width: 0; border: 1px solid var(--border); background: var(--surface-2); cursor: pointer; }
+.visibility-choice label.active { border-color: var(--accent); box-shadow: 0 0 0 1px color-mix(in srgb,var(--accent) 35%,transparent); }
+.visibility-choice input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.visibility-choice label > span { display: grid; grid-template-columns: auto 1fr; padding: .75rem; gap: .18rem .5rem; align-items: center; }
+.visibility-choice svg { grid-row: 1 / 3; color: var(--accent); }
+.visibility-choice strong { font-size: .78rem; }
+.visibility-choice small { color: var(--muted); font-size: .68rem; line-height: 1.35; }
+.locked-folder-help { display: flex; margin: -.2rem 0 0; padding: .55rem .65rem; align-items: center; gap: .4rem; border-left: 3px solid var(--accent); color: var(--muted); background: color-mix(in srgb,var(--accent) 8%,transparent); font-size: .7rem; }
+.folder-card.locked { border-color: color-mix(in srgb,var(--accent) 55%,var(--border)); }
+.folder-card.locked .folder-name svg { color: var(--accent); }
+.folder-name em { margin-left: auto; color: var(--accent); font-family: inherit; font-size: .58rem; font-style: normal; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.locked-detail-label { display: inline-flex; align-self: flex-start; margin: 0 0 .7rem; padding: .35rem .5rem; align-items: center; gap: .3rem; border: 1px solid color-mix(in srgb,var(--accent) 45%,var(--border)); color: var(--accent); font-size: .66rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; }
+.results-line button { display: inline-flex; align-items: center; gap: .25rem; }
+@media(max-width:560px) { .visibility-choice { grid-template-columns: 1fr; } }
+`;
+const build48StyleTag = document.createElement('style');
+build48StyleTag.textContent = BUILD_48_STYLES;
+document.head.appendChild(build48StyleTag);
+
 
 const TYPES = ['Idol', 'Actor', 'Soloist', 'Model', 'Athlete', 'Other'];
-const BUILD_LABEL = 'Build 47 · October 13, 2026';
+const BUILD_LABEL = 'Build 48 · October 21, 2026';
 
 const demoPhotos = [
   { id: 'demo-1', person: 'Song Mingi', group: 'ATEEZ', type: 'Idol', note: '', demo: true, color: '#754b5d', initials: 'MG' },
@@ -510,6 +545,7 @@ const demoPhotos = [
 ];
 
 const emptyForm = {
+  visibility: 'public',
   person: '',
   group: '',
   dateTaken: '',
@@ -970,6 +1006,7 @@ function FoldersView({ photos, onChoose, density, sort, canReorder, onReorder })
       name,
       photos: folderPhotos,
       value: name,
+      locked: folderPhotos.some((photo) => photo._isPrivate),
       createdAt: Math.min(...folderPhotos.map((photo) => timeValue(photo.createdAt)).filter(Boolean)),
       order: folderPhotos.reduce((value, photo) => Number.isFinite(photo.folderOrder?.[name]) ? Math.min(value, photo.folderOrder[name]) : value, Number.MAX_SAFE_INTEGER),
     })).sort((a, b) => {
@@ -984,14 +1021,14 @@ function FoldersView({ photos, onChoose, density, sort, canReorder, onReorder })
   return (
     <div ref={drag.containerRef} className={`folders-grid density-${density} ${canReorder ? 'arranging' : ''}`} onPointerMove={drag.movePointer} onPointerUp={drag.finishPointer} onPointerCancel={drag.finishPointer}>
       {drag.orderedPhotos.map((folder) => (
-        <button className={`folder-card ${canReorder ? 'reorderable' : ''} ${drag.draggedId === folder.id ? 'dragging' : ''}`} type="button" key={folder.value} data-photo-id={folder.id} onPointerDown={(event) => drag.startPointer(event, folder.id)} onClick={() => drag.openPhoto(folder, () => onChoose(folder.value))}>
+        <button className={`folder-card ${folder.locked ? 'locked' : ''} ${canReorder ? 'reorderable' : ''} ${drag.draggedId === folder.id ? 'dragging' : ''}`} type="button" key={folder.value} data-photo-id={folder.id} onPointerDown={(event) => drag.startPointer(event, folder.id)} onClick={() => drag.openPhoto(folder, () => onChoose(folder.value))}>
           <span className={`folder-preview preview-count-${Math.min(folder.photos.length, 4)}`}>
             {folder.photos.slice(0, 4).map((photo) => (
               <span key={photo.id}><PhotoVisual photo={photo} /></span>
             ))}
           </span>
           <span className="folder-info">
-            <span className="folder-name"><FolderHeart size={17} /><strong>{folder.name}</strong></span>
+            <span className="folder-name">{folder.locked ? <Lock size={17} /> : <FolderHeart size={17} />}<strong>{folder.name}</strong>{folder.locked && <em>Only you</em>}</span>
             <small>{folder.photos.length} {folder.photos.length === 1 ? 'photo' : 'photos'}</small>
           </span>
         </button>
@@ -1283,11 +1320,12 @@ function CropModal({ src, current, onCancel, onSave }) {
   );
 }
 
-function AddEditModal({ photo, user, people, groups, events, tags, folders, photoCredits, onClose, onSaved, onDeleted, inline = false }) {
+function AddEditModal({ photo, user, people, groups, events, tags, folders, lockedFolders = new Set(), photoCredits, onClose, onSaved, onDeleted, inline = false }) {
   const editing = Boolean(photo?.id && !photo.demo);
   const [form, setForm] = useState(() => editing ? {
     ...emptyForm,
     ...photo,
+    visibility: photo._isPrivate ? 'locked' : 'public',
     events: cleanList(photo.events?.length ? photo.events : photo.event),
     otherPeople: cleanList(photo.otherPeople),
     tags: cleanList(photo.tags),
@@ -1322,7 +1360,8 @@ function AddEditModal({ photo, user, people, groups, events, tags, folders, phot
   function update(field, value) {
     setForm((current) => {
       const affiliation = field === 'person' ? affiliationForPerson(value) : null;
-      return { ...current, [field]: value, ...(affiliation ? { group: affiliation } : {}) };
+      const needsLock = field === 'folders' && cleanList(value).some((folder) => lockedFolders.has(folder));
+      return { ...current, [field]: value, ...(affiliation ? { group: affiliation } : {}), ...(needsLock ? { visibility: 'locked' } : {}) };
     });
   }
 
@@ -1525,6 +1564,13 @@ function AddEditModal({ photo, user, people, groups, events, tags, folders, phot
       setError('Paste an image URL first.');
       return;
     }
+    const selectedFolders = cleanList(form.folders);
+    const usesLockedFolder = selectedFolders.some((folder) => lockedFolders.has(folder));
+    const saveAsPrivate = form.visibility === 'locked' || usesLockedFolder;
+    if (saveAsPrivate && !selectedFolders.length) {
+      setError('Choose or create a folder for locked photos.');
+      return;
+    }
 
     setSaving(true);
     setSaveProgress(null);
@@ -1539,11 +1585,12 @@ function AddEditModal({ photo, user, people, groups, events, tags, folders, phot
         event: cleanList(form.events)[0] || '',
         otherPeople: cleanList(form.otherPeople).filter((name) => name.toLowerCase() !== form.person.trim().toLowerCase()),
         tags: cleanList(form.tags),
-        folders: cleanList(form.folders),
+        folders: selectedFolders,
         type: form.type,
         note: form.note.trim(),
         originalSourceUrl: form.originalSourceUrl.trim(),
         photographer: form.photographer.trim(),
+        accessLevel: saveAsPrivate ? 'locked' : 'public',
       };
       const payloadFor = (crop, image, order) => ({
         ...sharedPayload,
@@ -1562,7 +1609,7 @@ function AddEditModal({ photo, user, people, groups, events, tags, folders, phot
       if (editing) {
         let image = { imageUrl: form.imageUrl, externalUrl: form.sourceType === 'external-url' };
         if (file) image = { imageUrl: await compressImage(file), externalUrl: false };
-        await withSaveTimeout(changePhoto(photo.id, payloadFor(form, image, photo.albumOrder ?? Date.now())));
+        await withSaveTimeout(changePhoto(photo, payloadFor(form, image, photo.albumOrder ?? Date.now()), saveAsPrivate));
         onSaved(image.warning, 1);
         return;
       }
@@ -1570,7 +1617,7 @@ function AddEditModal({ photo, user, people, groups, events, tags, folders, phot
       if (source === 'url') {
         setSaveProgress({ current: 1, total: 1 });
         const image = await imageFromUrl(form.imageUrl);
-        await withSaveTimeout(createPhoto(payloadFor(form, image, Date.now())));
+        await withSaveTimeout(createPhoto(payloadFor(form, image, Date.now()), saveAsPrivate));
         onSaved(image.warning, 1);
         return;
       }
@@ -1582,7 +1629,7 @@ function AddEditModal({ photo, user, people, groups, events, tags, folders, phot
         setSaveProgress({ current: index + 1, total: batchItems.length });
         const image = item.file ? { imageUrl: await compressImage(item.file), externalUrl: false } : await imageFromUrl(item.sourceUrl);
         if (image.warning) batchWarning = image.warning;
-        await withSaveTimeout(createPhoto(payloadFor(item, image, orderBase + index)));
+        await withSaveTimeout(createPhoto(payloadFor(item, image, orderBase + index), saveAsPrivate));
         completedIds.push(item.id);
       }
       onSaved(batchWarning, batchItems.length);
@@ -1712,6 +1759,12 @@ function AddEditModal({ photo, user, people, groups, events, tags, folders, phot
           <label><span>Date taken <small>optional</small></span><input type="date" value={form.dateTaken} onChange={(event) => update('dateTaken', event.target.value)} /></label>
           <MultiValueField id={`${fieldPrefix}-photo-events`} label="Events" values={form.events} onChange={(value) => update('events', value)} suggestions={events} placeholder="Type an event, then press +" />
           <h3 className="metadata-section-heading">Organize</h3>
+          <fieldset className="visibility-choice">
+            <legend>Visibility</legend>
+            <label className={form.visibility === 'public' ? 'active' : ''}><input type="radio" name={`${fieldPrefix}-visibility`} value="public" checked={form.visibility === 'public'} onChange={() => update('visibility', 'public')} /><span><Frame size={17} /><strong>Public Gallery</strong><small>Shown in the gallery your friends can browse.</small></span></label>
+            <label className={form.visibility === 'locked' ? 'active' : ''}><input type="radio" name={`${fieldPrefix}-visibility`} value="locked" checked={form.visibility === 'locked'} onChange={() => update('visibility', 'locked')} /><span><Lock size={17} /><strong>Locked Folder</strong><small>Only you can load or view these photos after signing in.</small></span></label>
+          </fieldset>
+          {form.visibility === 'locked' && <p className="locked-folder-help"><Lock size={13} /> Add at least one folder below. These photos will stay out of Gallery and People.</p>}
           <MultiValueField id={`${fieldPrefix}-photo-folders`} label="Folders" values={form.folders} onChange={(value) => update('folders', value)} suggestions={folders} placeholder="Screenshot, sunglasses…" />
           <MultiValueField id={`${fieldPrefix}-photo-tags`} label="Tags" values={form.tags} onChange={(value) => update('tags', value)} suggestions={tags} placeholder="Meme, funny, favorite…" />
           <h3 className="metadata-section-heading">Credit &amp; note</h3>
@@ -1748,6 +1801,7 @@ function PhotoDetail({ photo, canEdit, onClose, onEdit }) {
       <div className="detail-image"><PhotoVisual photo={photo} eager /></div>
       <div className="detail-copy">
         <IconButton label="Close" onClick={onClose}><X size={19} /></IconButton>
+        {photo._isPrivate && <p className="locked-detail-label"><Lock size={13} /> Locked · only you</p>}
         <p className="eyebrow">{photo.type}</p>
         <h2>{photo.person}</h2>
         {photo.group && <p className="detail-group">{photo.group}</p>}
@@ -1796,7 +1850,7 @@ function BulkEditModal({ photos, onClose, onSaved, onDeleted }) {
     if (enabled.events) data.event = data.events[0] || '';
     setSaving(true); setError('');
     try {
-      await withSaveTimeout(updatePhotoMetadata(photos.map((photo) => ({ id: photo.id, data }))));
+      await withSaveTimeout(updatePhotoMetadata(photos.map((photo) => ({ id: photo.id, data, collectionName: photo._collection }))));
       onSaved();
     } catch (saveError) { setError(saveError.message || 'Could not update the selected photos.'); setSaving(false); }
   }
@@ -1839,7 +1893,7 @@ function CoverPickerModal({ person, photos, onClose, onSave }) {
   async function save() {
     setSaving(true); setError('');
     try {
-      const changes = choices.map((photo) => ({ id: photo.id, data: { peopleCovers: cleanList(photo.peopleCovers).filter((name) => name !== person).concat(photo.id === selectedId ? [person] : []) } }));
+      const changes = choices.map((photo) => ({ id: photo.id, collectionName: photo._collection, data: { peopleCovers: cleanList(photo.peopleCovers).filter((name) => name !== person).concat(photo.id === selectedId ? [person] : []) } }));
       await withSaveTimeout(updatePhotoMetadata(changes));
       onSave();
     } catch (saveError) { setError(saveError.message || 'Could not save this cover.'); setSaving(false); }
@@ -1888,7 +1942,7 @@ function metadataChangesFor(photos, kind, oldValue, newValue) {
       const values = cleanList(photo.folders);
       if (values.includes(oldValue)) data.folders = cleanList(values.flatMap((item) => item === oldValue ? (deleting ? [] : [newValue]) : [item]));
     }
-    return Object.keys(data).length ? [{ id: photo.id, data }] : [];
+    return Object.keys(data).length ? [{ id: photo.id, data, collectionName: photo._collection }] : [];
   });
 }
 
@@ -2013,7 +2067,8 @@ function App() {
   const [user, setUser] = useState(null);
   const [authLoaded, setAuthLoaded] = useState(!firebaseReady);
   const [authError, setAuthError] = useState('');
-  const [photos, setPhotos] = useState(firebaseReady ? [] : demoPhotos);
+  const [publicPhotos, setPublicPhotos] = useState(firebaseReady ? [] : demoPhotos);
+  const [privatePhotos, setPrivatePhotos] = useState([]);
   const [loading, setLoading] = useState(firebaseReady);
   const [dataError, setDataError] = useState('');
   const [search, setSearch] = useState('');
@@ -2054,6 +2109,12 @@ function App() {
     || (ownerEmail && user.email?.toLowerCase() === ownerEmail.toLowerCase())
   ));
   const canView = !privateMode || isOwner;
+  const photos = useMemo(() => [...publicPhotos, ...(isOwner ? privatePhotos : [])], [publicPhotos, privatePhotos, isOwner]);
+  function setPhotos(updater) {
+    const next = typeof updater === 'function' ? updater(photos) : updater;
+    setPublicPhotos(next.filter((photo) => !photo._isPrivate));
+    setPrivatePhotos(next.filter((photo) => photo._isPrivate));
+  }
 
   useEffect(() => {
     if (!firebaseReady) return undefined;
@@ -2070,10 +2131,23 @@ function App() {
     }
     setLoading(true);
     return watchPhotos(
-      (nextPhotos) => { setPhotos(nextPhotos); setLoading(false); setDataError(''); },
+      PHOTOS_COLLECTION,
+      (nextPhotos) => { setPublicPhotos(nextPhotos); setLoading(false); setDataError(''); },
       (error) => { setDataError(error.message || 'Could not load the folder.'); setLoading(false); },
     );
   }, [authLoaded, canView]);
+
+  useEffect(() => {
+    if (!firebaseReady || !authLoaded || !isOwner) {
+      setPrivatePhotos([]);
+      return undefined;
+    }
+    return watchPhotos(
+      PRIVATE_PHOTOS_COLLECTION,
+      setPrivatePhotos,
+      (error) => setDataError(`Locked folders could not be loaded: ${error.message || 'Check your Firestore rules.'}`),
+    );
+  }, [authLoaded, isOwner]);
 
   useEffect(() => {
     if (!toast) return undefined;
@@ -2103,12 +2177,15 @@ function App() {
   const events = useMemo(() => [...new Set(photos.flatMap((photo) => cleanList(photo.events?.length ? photo.events : photo.event)))].sort(), [photos]);
   const tags = useMemo(() => [...new Set(photos.flatMap((photo) => cleanList(photo.tags)))].sort(), [photos]);
   const folders = useMemo(() => [...new Set(photos.flatMap((photo) => cleanList(photo.folders)))].sort(), [photos]);
+  const lockedFolders = useMemo(() => new Set(privatePhotos.flatMap((photo) => cleanList(photo.folders))), [privatePhotos]);
   const photoCredits = useMemo(() => [...new Set(photos.map((photo) => String(photo.photographer || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b)), [photos]);
   const mostSaved = useMemo(() => [...counts.entries()].sort((a, b) => b[1] - a[1])[0], [counts]);
 
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase();
-    const next = photos.filter((photo) => {
+    const includeLockedFolder = isOwner && folderFilter && lockedFolders.has(folderFilter);
+    const sourcePhotos = view === 'folders' && isOwner ? photos : includeLockedFolder ? photos : photos.filter((photo) => !photo._isPrivate);
+    const next = sourcePhotos.filter((photo) => {
       const photoPeople = cleanList([photo.person, ...cleanList(photo.otherPeople)]);
       const photoEvents = cleanList(photo.events?.length ? photo.events : photo.event);
       const photoTags = cleanList(photo.tags);
@@ -2141,7 +2218,7 @@ function App() {
       if (sort === 'most') return (counts.get(b.person) || 0) - (counts.get(a.person) || 0) || a.person.localeCompare(b.person);
       return timeValue(b.createdAt) - timeValue(a.createdAt);
     });
-  }, [photos, search, person, group, type, eventFilter, tagFilter, folderFilter, sort, counts]);
+  }, [photos, search, person, group, type, eventFilter, tagFilter, folderFilter, sort, counts, isOwner, lockedFolders, view]);
 
   const activeFilters = [person, group, type, eventFilter, tagFilter, folderFilter].filter(Boolean).length;
   const galleryIsFiltered = Boolean(search.trim() || activeFilters);
@@ -2274,6 +2351,7 @@ function App() {
           note: String(photo.note || '').trim(),
           originalSourceUrl: String(photo.originalSourceUrl || '').trim(),
           photographer: String(photo.photographer || '').trim(),
+          accessLevel: photo._isPrivate || photo.accessLevel === 'locked' ? 'locked' : 'public',
           peopleCovers: cleanList(photo.peopleCovers),
           folderOrder: photo.folderOrder && typeof photo.folderOrder === 'object' ? photo.folderOrder : {},
           imageUrl: String(photo.imageUrl),
@@ -2314,7 +2392,7 @@ function App() {
     setPhotos((current) => current.map((photo) => nextOrder.has(photo.id) ? { ...photo, albumOrder: nextOrder.get(photo.id) } : photo));
     setToast('Saving your gallery order…');
     try {
-      await withSaveTimeout(saveAlbumOrder(mergedOrder.map((photo) => photo.id)));
+      await withSaveTimeout(saveAlbumOrder(mergedOrder));
       setToast('Gallery order saved.');
     } catch (error) {
       setDataError(error.message || 'Could not save the gallery order.');
@@ -2326,6 +2404,7 @@ function App() {
     const order = Object.fromEntries(nextFolders.map((folder, index) => [folder.name, index]));
     const changes = photos.filter((photo) => !photo.demo).map((photo) => ({
       id: photo.id,
+      collectionName: photo._collection,
       data: { folderOrder: { ...(photo.folderOrder || {}), ...order } },
     }));
     setPhotos((current) => current.map((photo) => ({ ...photo, folderOrder: { ...(photo.folderOrder || {}), ...order } })));
@@ -2384,7 +2463,7 @@ function App() {
       </header>
 
       <main>
-        {isOwner && <details className="upload-disclosure" id="upload-disclosure"><summary><ImagePlus size={18} /><span>Add to your collection</span><Plus size={17} /></summary><AddEditModal key={uploaderKey} inline user={user} people={people} groups={groups} events={events} tags={tags} folders={folders} photoCredits={photoCredits} onClose={() => {}} onSaved={(warning, count = 1) => { setUploaderKey((value) => value + 1); setToast(warning ? 'Photo saved. The original site blocked copying, so this one still uses its URL.' : count > 1 ? `${count} photos added to your folder.` : 'Photo added to your folder.'); }} onDeleted={() => {}} /></details>}
+        {isOwner && <details className="upload-disclosure" id="upload-disclosure"><summary><ImagePlus size={18} /><span>Add to your collection</span><Plus size={17} /></summary><AddEditModal key={uploaderKey} inline user={user} people={people} groups={groups} events={events} tags={tags} folders={folders} lockedFolders={lockedFolders} photoCredits={photoCredits} onClose={() => {}} onSaved={(warning, count = 1) => { setUploaderKey((value) => value + 1); setToast(warning ? 'Photo saved. The original site blocked copying, so this one still uses its URL.' : count > 1 ? `${count} photos added to your folder.` : 'Photo added to your folder.'); }} onDeleted={() => {}} /></details>}
 
         <div className="collection-heading">
           <div><p className="eyebrow">THE PERSONAL PHOTO ARCHIVE</p><h2>Faces worth saving.</h2></div>
@@ -2392,7 +2471,7 @@ function App() {
         </div>
 
         <section className="summary-row collection-summary" aria-label="Folder summary">
-          <Stat value={photos.length} label="photos" />
+          <Stat value={publicPhotos.length} label="gallery photos" />
           <Stat value={people.length} label="people" />
           <Stat value={groups.length} label="groups" />
           <Stat value={folders.length} label="folders" />
@@ -2454,7 +2533,7 @@ function App() {
               <span>{filtered.length} {filtered.length === 1 ? 'photo' : 'photos'}</span>
               {rearranging && <em>{view === 'folders' ? 'Drag folders anywhere · drop to save' : galleryIsFiltered ? 'Drag to rearrange the matching photos · drop to save' : 'Drag photos anywhere · drop to save'}</em>}
               {person && <button type="button" onClick={() => setPerson('')}>{person} <X size={13} /></button>}
-              {folderFilter && <button type="button" onClick={() => setFolderFilter('')}>{folderFilter} <X size={13} /></button>}
+              {folderFilter && <button type="button" onClick={() => setFolderFilter('')}>{lockedFolders.has(folderFilter) && <Lock size={12} />} {folderFilter} <X size={13} /></button>}
             </div>
             {view === 'wall' && <InstaxGallery photos={filtered} onOpen={setDetailPhoto} density={density} canReorder={canReorderPhotos} onReorder={reorderGallery} selecting={selecting} selectedIds={selectedIds} onToggle={toggleSelected} />}
             {view === 'people' && <PeopleView photos={filtered} density={density} canEdit={isOwner} onChooseCover={setCoverPerson} onChoose={(name) => { setPerson(name); setView('wall'); }} />}
@@ -2466,7 +2545,7 @@ function App() {
       <footer className="site-footer"><span><FolderHeart size={14} /> Pretty People Folder</span><span className="release-label">{BUILD_LABEL}</span></footer>
 
       {detailPhoto && <PhotoDetail photo={detailPhoto} canEdit={isOwner} onClose={() => setDetailPhoto(null)} onEdit={() => openEdit(detailPhoto)} />}
-      {editorOpen && editorPhoto && isOwner && <AddEditModal photo={editorPhoto} user={user} people={people} groups={groups} events={events} tags={tags} folders={folders} photoCredits={photoCredits} onClose={() => setEditorOpen(false)} onSaved={(warning) => { setEditorOpen(false); setToast(warning ? 'Photo saved. The original site blocked copying, so this one still uses its URL.' : 'Photo updated.'); }} onDeleted={() => { setEditorOpen(false); setToast('Photo removed.'); }} />}
+      {editorOpen && editorPhoto && isOwner && <AddEditModal photo={editorPhoto} user={user} people={people} groups={groups} events={events} tags={tags} folders={folders} lockedFolders={lockedFolders} photoCredits={photoCredits} onClose={() => setEditorOpen(false)} onSaved={(warning) => { setEditorOpen(false); setToast(warning ? 'Photo saved. The original site blocked copying, so this one still uses its URL.' : 'Photo updated.'); }} onDeleted={() => { setEditorOpen(false); setToast('Photo removed.'); }} />}
       {bulkEditOpen && selectedPhotos.length > 0 && isOwner && <BulkEditModal photos={selectedPhotos} onClose={() => setBulkEditOpen(false)} onSaved={() => { setBulkEditOpen(false); setSelecting(false); setSelectedIds(new Set()); setToast(`${selectedPhotos.length} photos updated.`); }} onDeleted={() => { setBulkEditOpen(false); setSelecting(false); setSelectedIds(new Set()); setToast(`${selectedPhotos.length} photos deleted.`); }} />}
       {coverPerson && isOwner && <CoverPickerModal person={coverPerson} photos={photos} onClose={() => setCoverPerson('')} onSave={() => { setCoverPerson(''); setToast(`Cover photo saved for ${coverPerson}.`); }} />}
       {manageListsOpen && isOwner && <ManageListsModal photos={photos} lists={{ people, groups, events, tags, folders }} onClose={() => setManageListsOpen(false)} onSaved={handleMetadataSaved} />}
