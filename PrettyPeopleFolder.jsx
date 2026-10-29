@@ -758,9 +758,91 @@ const build50StyleTag = document.createElement('style');
 build50StyleTag.textContent = BUILD_50_STYLES;
 document.head.appendChild(build50StyleTag);
 
+const BUILD_51_STYLES = `
+/* Build 51 — Trello-style in-photo gallery captions */
+.instax-gallery .instax-card,
+.instax-gallery.density-compact .instax-card {
+  padding: 0;
+  border: 0;
+  border-radius: .38rem;
+  background: var(--vv-surface);
+  box-shadow: 0 5px 14px rgba(37,29,23,.12);
+  isolation: isolate;
+}
+.instax-gallery .instax-card:hover {
+  border: 0;
+  box-shadow: 0 13px 28px rgba(37,29,23,.2);
+}
+.instax-gallery .instax-photo {
+  display: block;
+  width: 100%;
+  border-radius: inherit;
+  overflow: hidden;
+}
+.instax-gallery .instax-caption,
+.instax-gallery.density-comfortable .instax-caption,
+.instax-gallery.density-compact .instax-caption,
+.instax-gallery.density-large .instax-caption {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  min-height: 4.35rem;
+  padding: 2.25rem .68rem .58rem;
+  align-items: flex-end;
+  justify-content: flex-start;
+  overflow: hidden;
+  border-radius: 0 0 .38rem .38rem;
+  background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.12) 28%, rgba(0,0,0,.62) 100%);
+  pointer-events: none;
+}
+.instax-gallery .instax-caption:empty { display: none; }
+.instax-gallery .instax-note,
+.instax-gallery.density-large .instax-note.note-short,
+.instax-gallery.density-large .instax-note.note-medium,
+.instax-gallery.density-large .instax-note.note-long,
+.instax-gallery.density-comfortable .instax-note.note-short,
+.instax-gallery.density-comfortable .instax-note.note-medium,
+.instax-gallery.density-comfortable .instax-note.note-long,
+.instax-gallery.density-compact .instax-note.note-short,
+.instax-gallery.density-compact .instax-note.note-medium,
+.instax-gallery.density-compact .instax-note.note-long {
+  position: relative;
+  z-index: 1;
+  display: -webkit-box;
+  max-width: 100%;
+  padding: 0;
+  overflow: hidden;
+  color: #fff;
+  font-family: 'Banana Super', cursive !important;
+  font-size: clamp(.78rem,1.15vw,.98rem);
+  font-weight: 400;
+  line-height: 1.06;
+  text-align: left;
+  text-shadow: none;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  mix-blend-mode: difference;
+}
+@media (max-width: 760px) {
+  .instax-gallery .instax-caption,
+  .instax-gallery.density-compact .instax-caption { min-height: 3.7rem; padding: 1.9rem .48rem .42rem; }
+  .instax-gallery .instax-note,
+  .instax-gallery.density-compact .instax-note.note-short,
+  .instax-gallery.density-compact .instax-note.note-medium,
+  .instax-gallery.density-compact .instax-note.note-long { font-size: clamp(.7rem,2.8vw,.86rem); }
+}
+`;
+const build51StyleTag = document.createElement('style');
+build51StyleTag.textContent = BUILD_51_STYLES;
+document.head.appendChild(build51StyleTag);
+
 
 const TYPES = ['Idol', 'Actor', 'Soloist', 'Model', 'Athlete', 'Other'];
-const BUILD_LABEL = 'Build 50 · October 29, 2026';
+const BUILD_LABEL = 'Build 51 · October 29, 2026';
 const INITIAL_THEME = (() => {
   const saved = window.localStorage.getItem('pretty-people-theme');
   if (saved === 'light' || saved === 'dark') return saved;
