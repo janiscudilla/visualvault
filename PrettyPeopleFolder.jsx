@@ -531,9 +531,31 @@ const build48StyleTag = document.createElement('style');
 build48StyleTag.textContent = BUILD_48_STYLES;
 document.head.appendChild(build48StyleTag);
 
+const BUILD_49_STYLES = `
+/* Build 49 — keep owner authentication accessible at every width */
+@media (max-width: 760px) {
+  .header-actions .quiet-button {
+    display: inline-flex;
+    min-height: 2.35rem;
+    padding: .5rem .65rem;
+    align-items: center;
+    justify-content: center;
+    gap: .35rem;
+    white-space: nowrap;
+  }
+}
+@media (max-width: 390px) {
+  .brand h1 { font-size: 1rem; }
+  .header-actions .quiet-button { padding: .48rem .55rem; font-size: .7rem; }
+}
+`;
+const build49StyleTag = document.createElement('style');
+build49StyleTag.textContent = BUILD_49_STYLES;
+document.head.appendChild(build49StyleTag);
+
 
 const TYPES = ['Idol', 'Actor', 'Soloist', 'Model', 'Athlete', 'Other'];
-const BUILD_LABEL = 'Build 48 · October 21, 2026';
+const BUILD_LABEL = 'Build 49 · October 29, 2026';
 
 const demoPhotos = [
   { id: 'demo-1', person: 'Song Mingi', group: 'ATEEZ', type: 'Idol', note: '', demo: true, color: '#754b5d', initials: 'MG' },
